@@ -1,0 +1,60 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "GDB C++",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/target/app",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"setupCommands": [
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				},
+				{
+					"description": "Set Disassembly Flavor to Intel",
+					"text": "-gdb-set disassembly-flavor intel",
+					"ignoreFailures": true
+				}
+			]
+			// "preLaunchTask": "C/C++: g++-10 build"
+		},
+    {
+			"name": "TEST GDB C++ with specific arguments",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/target/app",
+			"args": ["-g","--config","50_node_cluster.ini", "-m", "user", "--command", "test_non_leader_db"],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"setupCommands": [
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				},
+				{
+					"description": "Set Disassembly Flavor to Intel",
+					"text": "-gdb-set disassembly-flavor intel",
+					"ignoreFailures": true
+				}
+			]
+			// "preLaunchTask": "C/C++: g++-10 build"
+		}
+	]
+
+	]
+}

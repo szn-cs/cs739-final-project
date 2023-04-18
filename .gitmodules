@@ -1,0 +1,9 @@
+[submodule "dependency/vcpkg"]
+	path = dependency/vcpkg
+	url = https://github.com/Microsoft/vcpkg.git
+[submodule "dependency/grpc"]
+	path = dependency/grpc
+	url = https://github.com/grpc/grpc.git
+[submodule "dependency/variadic_table"]
+	path = dependency/variadic_table
+	url = https://github.com/friedmud/variadic_table
