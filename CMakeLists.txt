@@ -1,3 +1,5 @@
+# TODO: https://stackoverflow.com/questions/7724569/debug-vs-release-in-cmake
+
 cmake_minimum_required(VERSION 3.26)
 set(CMAKE_CXX_STANDARD 20)
 

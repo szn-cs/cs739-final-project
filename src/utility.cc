@@ -274,7 +274,6 @@ namespace utility::server {
     server->Wait();
     std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << red << "Server exited" << reset << std::endl;
   }
-  template void server::run_gRPC_server<rpc::ConsensusRPC>(utility::parse::Address address);  // explicit initiation - prevent linker errors for separate dec & def of template
-  template void server::run_gRPC_server<rpc::DatabaseRPC>(utility::parse::Address address);   // explicit initiation - prevent linker errors for separate dec & def of template
+  template void server::run_gRPC_server<rpc::RPC>(utility::parse::Address address);  // explicit initiation - prevent linker errors for separate dec & def of template
 
 }  // namespace utility::server

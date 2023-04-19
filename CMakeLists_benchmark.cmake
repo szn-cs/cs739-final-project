@@ -15,10 +15,8 @@ include(CheckFunctionExists)
 
 add_executable(${SERVER_BINARY_NAME} 
   ${SRC_FILES}
-  ${hw_proto_srcs_consensus} 
-  ${hw_grpc_srcs_consensus}
-  ${hw_proto_srcs_database} 
-  ${hw_grpc_srcs_database}
+  ${hw_proto_srcs_interface} 
+  ${hw_grpc_srcs_interface}
 )
 target_link_libraries(${SERVER_BINARY_NAME} 
   ${_REFLECTION} 

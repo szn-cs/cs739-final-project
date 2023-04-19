@@ -6,7 +6,7 @@
 #include "../src/declaration.h"
 
 // This test is not fully automated and required manual setup of cluster beforehand.
-void reachConsensus(rpc::call::DatabaseRPCWrapperCall& c, const size_t size) {
+void run(rpc::call::DatabaseRPCWrapperCall& c, const size_t size) {
   grpc::Status res;
   benchmark::DoNotOptimize(res = c.set("k", "v"));
   benchmark::ClobberMemory();
@@ -26,7 +26,7 @@ static void benchmark_function(benchmark::State& state) {
   // Perform setup here
   for (auto _ : state) {
     // This code gets timed
-    reachConsensus(c, 1);
+    run(c, 1);
   }
 }
 
@@ -43,22 +43,17 @@ BENCHMARK(benchmark_function)->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(40
  * BENCHMARK_MAIN(); // google/benchmark main macro
 */
 int main(int argc, char** argv) {
-  {  // required initialization to prevent segmentation errors - similar to app main() function
-    cout << termcolor::grey << utility::getClockTime() << termcolor::reset << endl;
+  cout << termcolor::grey << utility::getClockTime() << termcolor::reset << endl;
 
-    struct stat info;
-    std::shared_ptr<utility::parse::Config> config = std::make_shared<utility::parse::Config>();
+  std::shared_ptr<utility::parse::Config> config = std::make_shared<utility::parse::Config>();
+  boost::program_options::variables_map variables;
 
-    boost::program_options::variables_map variables;
-    utility::parse::parse_options<utility::parse::Mode::NODE>(argc, argv, config, variables);  // parse options from different sources
+  utility::parse::parse_options<utility::parse::Mode::NODE>(argc, argv, config, variables);  // parse options from different sources
 
-    // Initialize Cluster data & Node instances
-    app::initializeStaticInstance(config->cluster, config);
+  // Initialize Cluster data & Node instances
+  app::initializeStaticInstance(config);
+}
 
-    if (config->flag.debug)
-      cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
-  }
-
-  ::benchmark::Initialize(&argc, argv);
-  ::benchmark::RunSpecifiedBenchmarks();
+::benchmark::Initialize(&argc, argv);
+::benchmark::RunSpecifiedBenchmarks();
 }

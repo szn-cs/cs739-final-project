@@ -1,0 +1,15 @@
+syntax = "proto3"; // we use proto version 3
+package interface;   // similar to namespace, avoid conflicts
+
+service RPCService { 
+}
+
+message Empty {
+}
+
+message Request {
+}
+
+message Response {
+}
+
