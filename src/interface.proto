@@ -1,15 +1,18 @@
 syntax = "proto3"; // we use proto version 3
 package interface;   // similar to namespace, avoid conflicts
 
-service RPCService { 
+service RPC { 
+    rpc func(Request) returns (Response) {};
 }
 
 message Empty {
 }
 
 message Request {
+  int32 value = 1; 
 }
 
 message Response {
+  int32 value = 1; 
 }
 

@@ -11,20 +11,12 @@ build() {
   mkdir -p ./target/
   # copy binaries
   cp ./target/config/app ./target/
-  cp ./target/config/benchmark ./target/
-  # cp ./target/config/user ./target/
+  cp ./target/config/test ./target/
   cp ./config/*.ini ./target/
-
-  (source ./script/build.sh && test)
 }
 
 build_optimized() {
   echo "requires commenting out the appropriate lines in 'CMakeLists_app.cmake'"
-}
-
-# TODO: move to CMAKE
-test() {
-  gcc -Wall ./test/test.cc -o ./target/test
 }
 
 ## clean

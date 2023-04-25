@@ -5,15 +5,15 @@
 
 test() {
   ./target/app --help
-  ./target/app --mode=user --help
+  ./target/test --help
 
   # terminal 1
   {
-    ./target/app --mode node
+    ./target/app
   }
   # terminal 2
   {
-    ./target/app --mode user
+    ./target/test
   }
 }
 
@@ -21,11 +21,11 @@ test_example() {
   source ./script/setenv.sh
   # SERVER_ADDRESS=c220g5-110912.wisc.cloudlab.us:50051
 
-  ./target/app -g --port_consensus 8000 &
-  ./target/app -g --port_consensus 8001 &
-  ./target/app -g --port_consensus 8002 &
-  ./target/app -g --port_consensus 8003 &
-  ./target/app -g --port_consensus 8004 --flag.leader &
+  ./target/app -g --port 8000 &
+  ./target/app -g --port 8001 &
+  ./target/app -g --port 8002 &
+  ./target/app -g --port 8003 &
+  ./target/app -g --port 8004 &
 
   # ./server $SERVER -serverAddress=$SERVER_ADDRESS >/dev/null 2>&1 &
 
@@ -43,29 +43,29 @@ test_example() {
 }
 
 test_rpc() {
-  ./target/app -g --port_consensus 8000 --port_database 9000 &
-  ./target/app -g --port_consensus 8001 --port_database 9001 &
-  ./target/app -g --port_consensus 8002 --port_database 9002 &
-  ./target/app -g --port_consensus 8003 --port_database 9003 &
-  ./target/app -g --port_consensus 8004 --port_database 9004 --flag.leader &
+  ./target/app -g --port 8000 --port_database 9000 &
+  ./target/app -g --port 8000 &
+  ./target/app -g --port 8001 &
+  ./target/app -g --port 8002 &
+  ./target/app -g --port 8003 &
+  ./target/app -g --port 8004 --flag.leader &
 
-  ./target/app --mode user --command set --key k1 --value v1 --target 127.0.1.1:8002
-  ./target/app --mode user --command set --key k2 --value v2 --target 127.0.1.1:8004
-  ./target/app --mode user --command get --key k1 --target 127.0.1.1:8000
+  ./target/test --command set --key k1 --value v1 --target 127.0.1.1:8002
+  ./target/test --command set --key k2 --value v2 --target 127.0.1.1:8004
+  ./target/test --command get --key k1 --target 127.0.1.1:8000
 }
 
 test_leader_functionality() {
-  ./target/app -g --port_consensus 8000 --port_database 9000 --flag.leader &
+  ./target/app -g --port 8000 --flag.leader &
 
-  ./target/app --mode user --command test_leader
+  ./target/test --command test_1
 
   fuser -k 8000/tcp
-  fuser -k 9000/tcp
 }
 
 test_consistency_no_failure() {
-  CONFIG=15_node_cluster.ini
-  NUMBER=15
+  CONFIG=5_node_cluster.ini
+  NUMBER=5
 
   for i in {0..$((${NUMBER} - 1))}; do
     ones=$(($i % 10))
@@ -73,26 +73,24 @@ test_consistency_no_failure() {
     port_suffix="${tens}${ones}"
 
     if [[ $port_suffix == "00" ]]; then
-      # ./target/app --config ${CONFIG} --port_consensus 80${port_suffix} --port_database 90${port_suffix} --flag.leader &
-      ./target/app -g --config ${CONFIG} --port_consensus 80${port_suffix} --port_database 90${port_suffix} &
+      ./target/app -g --config ${CONFIG} --port 80${port_suffix} --flag.leader &
     else
-      ./target/app --config ${CONFIG} --port_consensus 80${port_suffix} --port_database 90${port_suffix} &
+      ./target/app -g --config ${CONFIG} --port 80${port_suffix} &
     fi
   done
 
   #### separate stage
 
-  ./target/app -g -m user --command test_1000_random_ops --config ${CONFIG}
-  ./target/app -g -m user --command test_count --config ${CONFIG}
-
+  ./target/test -g --command test_1 --config ${CONFIG}
 }
 
 test_benchmark() {
   # setup different cluster sizes
 
   FILE=15_node.csv
-  FOLDER=benchmark_set_leader
-  ./target/benchmark --benchmark_out=./results/${FOLDER}/${FILE} --benchmark_out_format=csv
+  # FOLDER=benchmark_set_leader
+  # ./target/test --mode benchmark --benchmark_out=./results/${FOLDER}/${FILE} --benchmark_out_format=csv
+  ./target/test --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
 }
 
 #  (source ./script/run.sh && terminate_process)

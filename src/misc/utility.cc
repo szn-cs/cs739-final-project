@@ -1,10 +1,10 @@
-#include "./declaration.h"
+#include "../header/utility.h"
 
 namespace utility {
 
   // construct a relative path
   std::string constructRelativePath(std::string path, std::string rootPath) {
-    string relativePath;
+    std::string relativePath;
     if (!(std::filesystem::path(path)).is_absolute())
       path = std::filesystem::canonical(path);
 
@@ -71,9 +71,11 @@ namespace utility::parse {
     std::string token;
     in >> token;
     if (token == "0")
-      m = Mode::NODE;
+      m = Mode::APP;
     else if (token == "1")
-      m = Mode::USER;
+      m = Mode::TEST;
+    else if (token == "2")
+      m = Mode::BENCHMARK;
     else
       in.setstate(std::ios_base::failbit);
     return in;
@@ -84,6 +86,7 @@ namespace utility::parse {
     return boost::program_options::value<T>(store_to);
   }
 
+  /// @brief Makes a address given an address and port.
   Address make_address(const std::string& address_and_port) {
     // Tokenize the string on the ":" delimiter.
     std::vector<std::string> tokens;
@@ -101,12 +104,13 @@ namespace utility::parse {
   }
 
   template <>
-  boost::program_options::variables_map parse_options<Mode::NODE>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  boost::program_options::variables_map parse_options<Mode::APP>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
 
-    EnumOption<Mode>::param_map["node"] = NODE;
-    EnumOption<Mode>::param_map["user"] = USER;
+    EnumOption<Mode>::param_map["app"] = utility::parse::Mode::APP;
+    EnumOption<Mode>::param_map["test"] = utility::parse::Mode::TEST;
+    EnumOption<Mode>::param_map["benchmark"] = utility::parse::Mode::BENCHMARK;
 
     std::filesystem::path executablePath;
     {
@@ -125,12 +129,11 @@ namespace utility::parse {
 
         generic.add_options()("help,h", "CMD options list");
         generic.add_options()("config", po::value<std::string>(), "Configuration file");
-        generic.add_options()("mode,m", po::value<EnumOption<Mode>>(), "Mode of execution: either `node` or `user`");
+        generic.add_options()("mode,m", po::value<EnumOption<Mode>>(), "Mode of execution: either `app`, `test`, or `benchmark`");
 
-        primary.add_options()("port_database", po::value<unsigned short>(&config->port_database)->default_value(9000), "Port of database RPC service");
-        primary.add_options()("port_consensus,p", po::value<unsigned short>(&config->port_consensus)->default_value(8000), "Port of consensus RPC service");
-        primary.add_options()("database_directory,d", po::value<std::string>(&config->database_directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp/server")), "Directory of database data");
-        primary.add_options()("cluster.address,a", make_value<std::vector<std::string>>(&config->cluster), "Addresses (incl. ports) of consensus cluster participants <address:port>");
+        primary.add_options()("port,p", po::value<unsigned short>(&config->port)->default_value(8000), "Port of RPC service");
+        primary.add_options()("directory,d", po::value<std::string>(&config->directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp/server")), "Directory of data");
+        primary.add_options()("cluster.address,a", make_value<std::vector<std::string>>(&config->cluster), "Addresses (incl. ports) of cluster participants <address:port>");
         primary.add_options()("flag.debug,g", po::bool_switch(&config->flag.debug)->default_value(false), "Debug flag");
         primary.add_options()("flag.leader", po::bool_switch(&config->flag.leader)->default_value(false), "testing: leader flag");
         primary.add_options()("flag.local_ubuntu", po::bool_switch(&config->flag.local_ubuntu)->default_value(false), "indicate if running locally on ubuntu, in which case the machine ip is 127.0.0.1");
@@ -164,22 +167,17 @@ namespace utility::parse {
       po::notify(variables);
 
       // copy manually the variables:
-      config->mode = (variables.count("mode")) ? variables["mode"].as<EnumOption<Mode>>().value : Mode::NODE;
+      config->mode = (variables.count("mode")) ? variables["mode"].as<EnumOption<Mode>>().value : Mode::APP;
 
       if (variables.count("help")) {
         std::cout << "Distributed Replicated Database\n"
                   << cmd_options << '\n'
                   << endl;
-
-        if (config->mode != Mode::USER)
-          exit(0);
       }
 
     } catch (const po::error& ex) {
       std::cerr << red << ex.what() << reset << "\n\n";
-
-      std::cout << "Distributed Replicated Database\n"
-                << cmd_options << '\n'
+      std::cout << "(Check options with --help flag.)\n"
                 << endl;
 
       exit(1);
@@ -189,7 +187,7 @@ namespace utility::parse {
   }
 
   template <>
-  boost::program_options::variables_map parse_options<Mode::USER>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  boost::program_options::variables_map parse_options<Mode::TEST>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
 
@@ -202,8 +200,8 @@ namespace utility::parse {
 
         user.add_options()("target,t", po::value<std::string>()->default_value("127.0.1.1:8000"), "target address to send to");
         user.add_options()("command,c", po::value<std::string>()->default_value("get"), "command");
-        user.add_options()("key,k", po::value<std::string>()->default_value("key-default"), "key");
-        user.add_options()("value,v", po::value<std::string>()->default_value("value-default"), "value");
+        user.add_options()("key,k", po::value<std::string>()->default_value("default-key"), "key");
+        user.add_options()("value,v", po::value<std::string>()->default_value("default-key"), "value");
 
         cmd_options.add(user);   // set options allowed on command line
         file_options.add(user);  // set options allowed in config file
@@ -227,7 +225,7 @@ namespace utility::parse {
       }
 
       if (variables.count("help")) {
-        std::cout << "\nUser mode of app binary: \n"
+        std::cout << "Test binary: \n"
                   << cmd_options << '\n'
                   << endl;
         exit(0);
@@ -237,9 +235,7 @@ namespace utility::parse {
 
     } catch (const po::error& ex) {
       std::cerr << red << ex.what() << reset << "\n\n";
-
-      std::cout << "\nUser mode of app binary: \n"
-                << cmd_options << '\n'
+      std::cout << "(Check options with --help flag.)\n"
                 << endl;
 
       exit(1);
@@ -252,8 +248,15 @@ namespace utility::parse {
 
 namespace utility::server {
 
+  /**
+     * start server for a specific gRPC service implementation
+     *
+     * @address: socket address structure with ip address & port components
+    */
   template <class S>
   void server::run_gRPC_server(utility::parse::Address address) {
+    // Compile-time sanity check
+    static_assert(std::is_base_of<interface::RPC::Service, S>::value, "Derived not derived from BaseClass");
     S service;
     std::string a = address.address + ":" + boost::lexical_cast<std::string>(address.port);
 
@@ -270,10 +273,11 @@ namespace utility::server {
 
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
-    std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << red << "Server started" << reset << std::endl;
+    std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << blue << "Server started" << reset << std::endl;
     server->Wait();
-    std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << red << "Server exited" << reset << std::endl;
+    std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << blue << "Server exited" << reset << std::endl;
   }
+
   template void server::run_gRPC_server<rpc::RPC>(utility::parse::Address address);  // explicit initiation - prevent linker errors for separate dec & def of template
 
 }  // namespace utility::server

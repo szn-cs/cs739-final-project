@@ -46,7 +46,7 @@ set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
 # includes ----------------------------
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_interface.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_app.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_benchmark.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_test.cmake)
 #-------------------------------------------
 
 # CPACK steers build files to proper paths (maybe used later in build process)
