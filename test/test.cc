@@ -88,7 +88,9 @@ int main(int argc, char** argv) {
   boost::program_options::variables_map variables;
 
   // parse options from different sources
-  utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
+  auto f = utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
+  if (f)
+    f();  // print help info
 
   auto m_test = [&argc, &argv, &variables, &config]() {
     cout << termcolor::grey << "mode = TEST" << termcolor::reset << endl;
@@ -96,7 +98,11 @@ int main(int argc, char** argv) {
     app::initializeStaticInstance(config, config->cluster);
 
     // additional parsing
-    utility::parse::parse_options<utility::parse::Mode::TEST>(argc, argv, config, variables);  // parse options from different sources
+    auto f = utility::parse::parse_options<utility::parse::Mode::TEST>(argc, argv, config, variables);  // parse options from different sources
+    if (f) {
+      f();  // print help info
+      exit(0);
+    }
 
     return test::entrypoint(config, variables);
   };
@@ -107,7 +113,9 @@ int main(int argc, char** argv) {
     app::initializeStaticInstance(config, config->cluster);
 
     // additional parsing
-    utility::parse::parse_options<utility::parse::Mode::TEST>(argc, argv, config, variables);  // parse options from different sources
+    auto f = utility::parse::parse_options<utility::parse::Mode::TEST>(argc, argv, config, variables);  // parse options from different sources
+    if (f)
+      f();
 
     if (config->flag.debug)
       cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;

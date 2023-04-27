@@ -149,7 +149,7 @@ namespace utility::parse {
      *
     */
   template <Mode mode>
-  boost::program_options::variables_map parse_options(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables);
+  std::function<void()> parse_options(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables);
 
 }  // namespace utility::parse
 

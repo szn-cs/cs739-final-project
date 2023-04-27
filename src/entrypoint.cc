@@ -9,7 +9,11 @@ int main(int argc, char* argv[]) {
   std::shared_ptr<utility::parse::Config> config = std::make_shared<utility::parse::Config>();
 
   // parse options from different sources
-  utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
+  auto f = utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
+  if (f) {
+    f();  // print help info
+    exit(0);
+  }
 
   auto m_app = [&argc, &argv, &variables, &config]() {
     cout << termcolor::grey << "mode = APP" << termcolor::reset << endl;

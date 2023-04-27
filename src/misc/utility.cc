@@ -104,7 +104,7 @@ namespace utility::parse {
   }
 
   template <>
-  boost::program_options::variables_map parse_options<Mode::APP>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  std::function<void()> parse_options<Mode::APP>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
 
@@ -169,11 +169,12 @@ namespace utility::parse {
       // copy manually the variables:
       config->mode = (variables.count("mode")) ? variables["mode"].as<EnumOption<Mode>>().value : Mode::APP;
 
-      if (variables.count("help")) {
-        std::cout << "Distributed Replicated Database\n"
-                  << cmd_options << '\n'
-                  << endl;
-      }
+      if (variables.count("help"))
+        return [cmd_options]() {
+          std::cout << "Distributed Replicated Database\n"
+                    << cmd_options << '\n'
+                    << endl;
+        };
 
     } catch (const po::error& ex) {
       std::cerr << red << ex.what() << reset << "\n\n";
@@ -183,11 +184,11 @@ namespace utility::parse {
       exit(1);
     }
 
-    return variables;
+    return nullptr;
   }
 
   template <>
-  boost::program_options::variables_map parse_options<Mode::TEST>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  std::function<void()> parse_options<Mode::TEST>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
 
@@ -224,12 +225,12 @@ namespace utility::parse {
         po::notify(variables);
       }
 
-      if (variables.count("help")) {
-        std::cout << "Test binary: \n"
-                  << cmd_options << '\n'
-                  << endl;
-        exit(0);
-      }
+      if (variables.count("help"))
+        return [cmd_options]() {
+          std::cout << "Test binary: \n"
+                    << cmd_options << '\n'
+                    << endl;
+        };
 
       // TODO: ensure ip address is valid
 
@@ -241,7 +242,7 @@ namespace utility::parse {
       exit(1);
     }
 
-    return variables;
+    return nullptr;
   }
 
 }  // namespace utility::parse
