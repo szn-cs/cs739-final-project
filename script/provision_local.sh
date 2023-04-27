@@ -1,5 +1,6 @@
 #!/bin/bash
 
+## Use only if `builtin-baseline` exist in vcpkg && biuld fails
 function fix_vcpkg() {
   WARNING='\033[93m'
   BOLD='\033[1m'
