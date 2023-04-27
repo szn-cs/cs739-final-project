@@ -1,6 +1,9 @@
 #!/bin/bash
 
 function fix_vcpkg() {
+  WARNING='\033[93m'
+  BOLD='\033[1m'
+  RESET="\e[0m"
   echo "FIX: fix_vcpkg called"
   # FIX issue with versioning in VCpkg with baseline reference in vcpkg.json
   VCPKG=./dependency/vcpkg
@@ -10,10 +13,13 @@ function fix_vcpkg() {
   git clone https://github.com/Microsoft/vcpkg.git
   popd
 
+  # git restore dependency/vcpkg --recurse-submodules
+
   pushd $VCPKG
-  echo "IMPORTANT: make sure 'vcpkg.json' has 'builtin-baseline' equal to:"
+  echo "$BOLD$WARNING IMPORTANT: make sure 'vcpkg.json' has 'builtin-baseline' equal to:"
   git fetch
   git rev-parse HEAD
+  echo $RESET
   popd
 }
 
@@ -41,7 +47,8 @@ sudo apt update -y && sudo apt -y upgrade
 sudo apt autoremove
 
 ## install vcpkg package manager and dependencies https://github.com/grpc/grpc/tree/master/src/cpp#install-using-vcpkg-package
-fix_vcpkg
+
+# fix_vcpkg
 
 pushd ./dependency/vcpkg
 ./bootstrap-vcpkg.sh -disableMetrics && ./vcpkg integrate install # >./CMake-script-for-vcpkg.txt
