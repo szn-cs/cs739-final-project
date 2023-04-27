@@ -43,7 +43,6 @@ namespace app {
   std::shared_ptr<Node> State::currentNode = nullptr;
 
   void initializeStaticInstance(std::shared_ptr<utility::parse::Config> config, std::vector<std::string> addressList) {
-    cout << addressList.size() << endl;
     State::config = config;
 
     State::memberList = std::make_shared<std::map<std::string, std::shared_ptr<Node>>>();
@@ -65,8 +64,10 @@ namespace app {
       State::currentNode = iterator->second;
     }
 
-    if (config->flag.debug)
+    if (config->flag.debug) {
+      std::cout << termcolor::grey << "Size of cluster (including self): " << State::memberList->size() << reset << std::endl;
       cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
+    }
   }
 
 }  // namespace app
