@@ -1,4 +1,22 @@
 #!/bin/bash
+
+function fix_vcpkg() {
+  echo "FIX: fix_vcpkg called"
+  # FIX issue with versioning in VCpkg with baseline reference in vcpkg.json
+  VCPKG=./dependency/vcpkg
+
+  rm -r $VCPKG
+  pushd ./dependency
+  git clone https://github.com/Microsoft/vcpkg.git
+  popd
+
+  pushd $VCPKG
+  echo "IMPORTANT: make sure 'vcpkg.json' has 'builtin-baseline' equal to:"
+  git fetch
+  git rev-parse HEAD
+  popd
+}
+
 source ./script/setenv.sh
 # Provision local developemnt - develop locally and send binaries to remote for testing
 
@@ -7,17 +25,24 @@ workspaceFolder=$PWD
 chmod +x ${workspaceFolder}/script/*
 
 # download corresponding submodules
+git restore dependency/vcpkg --recurse-submodules
 git submodule update --init --remote
+git submodule update --init --recursive
 
 ## provision system dependencies
-DEPENDENCIES="build-essential autoconf libtool pkg-config gcc cmake"
+DEPENDENCIES=("build-essential" "autoconf" "libtool" "pkg-config" "gcc" "cmake")
 
 sudo apt -y update && sudo apt -y upgrade
-for i in $DEPENDENCIES; do sudo apt install -y $i; done
+for i in ${DEPENDENCIES}; do
+  echo "EXECUTE: \`sudo apt install -y $i"
+  sudo apt install -y $i
+done
 sudo apt update -y && sudo apt -y upgrade
 sudo apt autoremove
 
 ## install vcpkg package manager and dependencies https://github.com/grpc/grpc/tree/master/src/cpp#install-using-vcpkg-package
+fix_vcpkg
+
 pushd ./dependency/vcpkg
 ./bootstrap-vcpkg.sh -disableMetrics && ./vcpkg integrate install # >./CMake-script-for-vcpkg.txt
 popd
