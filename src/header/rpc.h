@@ -8,8 +8,9 @@ namespace rpc {
   */
   class RPC : public interface::RPC::Service {
    public:
-    grpc::Status func(ServerContext*, const interface::Request*, interface::Response*) override;
-    grpc::Status get_master(ServerContext*, const interface::Empty*, interface::GetMasterResponse*) override;
+    grpc::Status ping(ServerContext*, const interface::Empty*, interface::Empty*) override;
+    grpc::Status init_session(ServerContext*, const interface::InitSessionRequest*, interface::Empty*) override;
+    grpc::Status keep_alive(ServerContext*, const interface::KeepAliveRequest*, interface::KeepAliveResponse*) override;
   };
 
   /**
@@ -23,8 +24,11 @@ namespace rpc {
       stub = interface::RPC::NewStub(channel);
     }
 
-    std::pair<grpc::Status, int> func(int v);
-    std::pair<grpc::Status, std::string> get_master();
+    grpc::Status ping();
+    grpc::Status init_session();
+    std::pair<grpc::Status, int32_t> keep_alive(std::string, chrono::system_clock::time_point); // Used for communicating with a known master
+    std::pair<grpc::Status, int32_t> keep_alive(std::string, std::map<std::string, LockStatus>, chrono::system_clock::time_point); // Used when in jeopardy
+    
 
     std::string address;
     std::shared_ptr<interface::RPC::Stub> stub;

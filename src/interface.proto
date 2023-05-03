@@ -2,21 +2,30 @@ syntax = "proto3"; // we use proto version 3
 package interface;   // similar to namespace, avoid conflicts
 
 service RPC { 
-    rpc func(Request) returns (Response) {};
-    rpc get_master(Empty) returns (GetMasterResponse) {};
+    rpc ping(Empty) returns (Empty) {};
+    rpc init_session(InitSessionRequest) returns (Empty) {};
+    rpc keep_alive(KeepAliveRequest) returns (KeepAliveResponse) {};
+}
+
+enum LockStatus {
+  EXCLUSIVE = 0;
+  SHARED = 1;
+  FREE = 2;
 }
 
 message Empty {
 }
 
-message Request {
-  int32 value = 1; 
+message InitSessionRequest {
+  string client_id = 1;
 }
 
-message Response {
-  int32 value = 1; 
+message KeepAliveRequest{
+  string client_id = 1;
+  map<string, LockStatus> locks = 2;
 }
 
-message GetMasterResponse {
-  string addr = 1;
+message KeepAliveResponse{
+  int32 lease_duration = 1;
 }
+

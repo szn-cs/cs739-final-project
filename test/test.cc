@@ -3,12 +3,11 @@
 namespace benchmark {
   // This test is not fully automated and required manual setup of cluster beforehand.
   void run(rpc::Endpoint& c, const size_t size) {
-    std::pair<grpc::Status, int> t;
-    benchmark::DoNotOptimize(t = c.func(123456));
-    auto [res, r] = t;
+    grpc::Status t;
+    benchmark::DoNotOptimize(t = c.ping());
     benchmark::ClobberMemory();
 
-    if (!res.ok())
+    if (!t.ok())
       throw std::runtime_error("RPC FAILURE");
   }
 
@@ -35,47 +34,40 @@ namespace benchmark {
 
 namespace test {
 
-  void test_1(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    cout << blue << "command: test_1" << reset << endl;
-
-    for (const auto& [key, node] : *(app::State::memberList)) {
-      std::pair<Status, int> r = node->endpoint.func(123456);
-      auto [status, v] = r;
-
-      if (status.ok()){
-        cout << "Value returned: " << v << endl;
-      }else{
-        cout << red << "Failed RPC" << reset << endl;
-      }
-    }
-  }
-
-  void test_rpc_get_master(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    cout << blue << "command: test_get_master" << reset << endl;
-    for (const auto& [key, node] : *(app::State::memberList)) {
-      std::pair<Status, std::string> r = node->endpoint.get_master();
-      auto [status, v] = r;
-
-      if (status.ok()){
-        cout << "Value returned: " << v << endl;
-      }else{
-        cout << red << "Failed RPC" << reset << endl;
-      }
-    }
-  }
-
   void test_start_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
     cout << blue << "command: test_start_session" << reset << endl;
-    for (const auto& [key, node] : *(app::State::memberList)) {
-      std::pair<Status, std::string> r = node->endpoint.get_master();
-      auto [status, v] = r;
 
-      if (status.ok()){
+    grpc::Status r = app::client::start_session();
 
-      }else{
-        cout << red << "Failed RPC" << reset << endl;
-      }
+    if (r.ok()){
+      cout << green << "Test passed for this configuration." << reset << endl;
+    }else{
+      cout << red << "Failed to start a session with any nodes." << reset << endl;
     }
+    
+  }
+
+    void test_keep_alive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    cout << blue << "command: test_heartbeat" << reset << endl;
+
+    std::map<std::string, interface::LockStatus> m;
+
+    for (const auto& [key, node] : *(app::State::memberList)) {
+        cout << key << endl;
+
+        auto deadline = std::chrono::system_clock::now() +
+    std::chrono::milliseconds(100);
+
+        std::pair<Status, int32_t> r = node->endpoint.keep_alive("", m, deadline);
+        auto [status, v] = r;
+
+        if (status.ok()){
+          cout << "Value returned: " << v << endl;
+        }else{
+          cout << red << "Failed RPC" << reset << endl;
+        }
+      }
+    
   }
 
 
@@ -110,13 +102,11 @@ namespace test {
 
     std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
 
-    if (command.compare("test_1") == 0) {
-      test_1(config, variables);
-    } else if (command.compare("test_rpc_get_master") == 0) {
-      test_rpc_get_master(config, variables);
-    } else if (command.compare("test_3") == 0) {
-      // test_1(config, variables);
-    } else {
+    if (command.compare("test_start_session") == 0) {
+      test_start_session(config, variables);
+    } else if(command.compare("test_keep_alive") == 0){
+      test_keep_alive(config, variables);
+    }else {
       cout << red << "No command matches " << command << reset << endl;
     }
   }

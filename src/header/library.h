@@ -39,6 +39,9 @@
 #include <termcolor/termcolor.hpp>
 #include <thread>
 #include <vector>
+#include <future>
+
+#include <msd/channel.hpp>
 
 #include "../../dependency/variadic_table/include/VariadicTable.h"  // https://github.com/friedmud/variadic_table
 #include "interface.grpc.pb.h"

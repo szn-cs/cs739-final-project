@@ -36,6 +36,17 @@ target_compile_options(${SERVER_BINARY_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-s
 # optimized: 
 # target_compile_options(${SERVER_BINARY_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++20 -Wall -g -O3 -D_FILE_OFFSET_BITS=64 -Wextra -Wzero-as-null-pointer-constant -Wextra -Wno-unused -Wno-unused-parameter>)
 
+# Gives us access to channels for safe and easy communication with threads/async functions
+include(FetchContent)
+if (NOT channel_POPULATED)
+    FetchContent_Declare(channel URL https://github.com/andreiavrammsd/cpp-channel/archive/v0.7.3.zip)
+    FetchContent_Populate(channel)
+    include_directories(${channel_SOURCE_DIR}/include)
+    # OR
+    # add_subdirectory(${channel_SOURCE_DIR}/)
+endif ()
+
+
 check_function_exists(fallocate HAVE_FALLOCATE)
 check_function_exists(fallocate HAVE_FLOCK)
 check_function_exists(utimensat HAVE_UTIMENSAT)

@@ -19,6 +19,11 @@ namespace utility {
    * https://stackoverflow.com/questions/21856025/getting-an-accurate-execution-time-in-c-micro-seconds
    * https://stackoverflow.com/questions/6734375/get-current-time-in-milliseconds-using-c-and-boost
   */
+
+  const int DEFAULT_LEASE_DURATION = 12000;
+  const int DEFAULT_LEASE_EXTENSION = 15000;
+  const int JEAPARDY_DURATION = 45000;
+
   std::string getClockTime();
 }  // namespace utility
 
