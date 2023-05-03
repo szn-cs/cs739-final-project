@@ -51,6 +51,9 @@ namespace app::server {
     static std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> locks;       // Map of filepaths to lock structures
     static std::shared_ptr<std::map<std::string, std::shared_ptr<Session>>> sessions; // Map of client ids to sessions
   };
+
+  void init_server_info();
+  void create_session(std::string);
 }
 
 namespace app::client {

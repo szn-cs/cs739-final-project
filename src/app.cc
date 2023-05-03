@@ -153,6 +153,23 @@ namespace app {
       State::memberList->insert(std::make_pair(a.toString(), std::make_shared<Node>(a.toString())));
     }
 
+    if (config->flag.debug) {
+      std::cout << termcolor::grey << "Size of cluster: " << State::memberList->size() << reset << std::endl;
+      cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
+    }
+
+  }
+
+}  // namespace app
+
+namespace app::server {
+  std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> info::locks = nullptr;
+  std::shared_ptr<std::map<std::string, std::shared_ptr<Session>>> info::sessions = nullptr;
+
+  void init_server_info(){
+    info::locks = std::make_shared<std::map<std::string, std::shared_ptr<Lock>>>();
+    info::sessions = std::make_shared<std::map<std::string, std::shared_ptr<Session>>>();
+
     utility::parse::Address selfAddress = State::config->getAddress<app::Service::NODE>();
     auto iterator = State::memberList->find(selfAddress.toString());
     if (iterator == State::memberList->end()) {  // not found
@@ -160,11 +177,6 @@ namespace app {
       State::memberList->insert(std::make_pair(selfAddress.toString(), State::currentNode));
     } else {
       State::currentNode = iterator->second;
-    }
-
-    if (config->flag.debug) {
-      std::cout << termcolor::grey << "Size of cluster (including self): " << State::memberList->size() << reset << std::endl;
-      cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
     }
 
     // Find leader
@@ -179,10 +191,6 @@ namespace app {
       State::master = std::make_shared<std::string>("");
     }
   }
-
-}  // namespace app
-
-namespace app::server {
 
 } // namespace app::server
 

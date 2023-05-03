@@ -23,6 +23,9 @@ int main(int argc, char* argv[]) {
 
     // handle directory:
     fs::create_directories(fs::absolute(config->directory));  // create database direcotry directory if doesn't exist
+
+    // Initialize the server data structures
+    app::server::init_server_info();
     
     // RPC services on separate threads
     utility::parse::Address a = config->getAddress<app::Service::NODE>();
