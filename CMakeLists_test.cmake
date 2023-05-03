@@ -3,9 +3,9 @@ set(TEST_FOLDER "${PROJECT_SOURCE_DIR}/test")
 set(SERVER_BINARY_NAME test)
 
 set(SRC_FILES 
-  ${TEST_FOLDER}/test.cc
-  ${SOURCE_FOLDER}/app.cc
-  ${SOURCE_FOLDER}/utility.cc
+${TEST_FOLDER}/test.cc
+${SOURCE_FOLDER}/app.cc
+${SOURCE_FOLDER}/utility.cc
 )
 
 include(CheckFunctionExists)
@@ -63,9 +63,10 @@ endif ()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include) # include headers - simplifies C++ include statements;  
 include_directories(${PROJECT_SOURCE_DIR}/dependency/variadic_table/include)
 include_directories(${PROJECT_SOURCE_DIR}/dependency/NuRaft/include)
+include_directories(${PROJECT_SOURCE_DIR}/dependency/NuRaft/include/libnuraft)
 
+# produce executable --------------------------------------------------------
 install(TARGETS ${SERVER_BINARY_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-#--------------------------------------------------------
 
 
 

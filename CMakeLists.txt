@@ -16,6 +16,7 @@ project (replicated_db
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/config/cmake;${CMAKE_MODULE_PATH}")
 set(CMAKE_BUILD_TYPE RelWithDebInfo) # debug
 set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
+set(EXAMPLES_SRC ${PROJECT_SOURCE_DIR}/examples)
 
 # print debug information 
 # include(./config/PrintVariables.cmake) # log cmake variables
@@ -46,10 +47,14 @@ set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
 
 # TODO: expose client header functions once build moves to a library rather than an executable
 
+#-------------------------------------------
+
 # extend cmake config ----------------------------
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_interface.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_app.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_test.cmake)
+# add_subdirectory("${PROJECT_SOURCE_DIR}/examples")
+
 
 #-------------------------------------------
 

@@ -68,6 +68,7 @@ endif ()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include) # include headers - simplifies C++ include statements; 
 include_directories(${PROJECT_SOURCE_DIR}/dependency/variadic_table/include)
 include_directories(${PROJECT_SOURCE_DIR}/dependency/NuRaft/include)
+include_directories(${PROJECT_SOURCE_DIR}/dependency/NuRaft/include/libnuraft)
 
 # produce executable --------------------------------------------------------
 install(TARGETS ${SERVER_BINARY_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
