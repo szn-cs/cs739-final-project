@@ -1,10 +1,9 @@
-#---SERVER------------------------------------------------
 set(TEST_FOLDER "${PROJECT_SOURCE_DIR}/test")
 
 set(SRC_FILES 
-${SOURCE_FOLDER}/app.cc
-${SOURCE_FOLDER}/misc/utility.cc
-${TEST_FOLDER}/test.cc
+  ${TEST_FOLDER}/test.cc
+  ${SOURCE_FOLDER}/app.cc
+  ${SOURCE_FOLDER}/misc/utility.cc
 )
 set(SERVER_BINARY_NAME 
   test
@@ -27,11 +26,17 @@ target_link_libraries(${SERVER_BINARY_NAME}
   ### Boost package
   ${Boost_LIBRARIES}
 
-  ## Benchmark
-  benchmark::benchmark benchmark::benchmark_main
+  ### NuRaft dependency (linking to static library)
+  ${PROJECT_SOURCE_DIR}/dependency/NuRaft/build/libnuraft.a
 )
 
 target_include_directories(${SERVER_BINARY_NAME} PRIVATE ${TERMCOLOR_INCLUDE_DIRS})
+
+# test specific packages
+target_link_libraries(${SERVER_BINARY_NAME} 
+  ## Google's Benchmark package
+  benchmark::benchmark benchmark::benchmark_main
+)
 
 target_compile_options(${SERVER_BINARY_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++20 -Wall -O0 -D_FILE_OFFSET_BITS=64 -Wextra -Wzero-as-null-pointer-constant -Wextra -Wno-unused -Wno-unused-parameter>)
 
