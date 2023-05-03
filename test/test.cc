@@ -1,5 +1,88 @@
 #include "./test.h"
 
+namespace test {
+
+  void test_start_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    grpc::Status r = app::client::start_session();
+
+    if (r.ok()) {
+      cout << green << "Test passed for this configuration." << reset << endl;
+    } else {
+      cout << red << "Failed to start a session with any nodes." << reset << endl;
+    }
+  }
+
+  void test_keep_alive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    std::map<std::string, interface::LockStatus> m;
+
+    for (const auto& [key, node] : *(app::State::memberList)) {
+      cout << key << endl;
+
+      auto deadline = std::chrono::system_clock::now() +
+                      std::chrono::milliseconds(100);
+
+      std::pair<Status, int32_t> r = node->endpoint.keep_alive("", m, deadline);
+      auto [status, v] = r;
+
+      if (status.ok()) {
+        cout << "Value returned: " << v << endl;
+      } else {
+        cout << red << "Failed RPC" << reset << endl;
+      }
+    }
+  }
+
+  void test_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    return;
+    // for (const auto& [key, node] : *(app::State::memberList)) {
+    //   cout << key << endl;
+    //   std::pair<Status, int> r = node->endpoint.open("/test", );
+    //   auto [status, v] = r;
+
+    //   if (status.ok()){
+    //     cout << "Value returned: " << v << endl;
+    //   }else{
+    //     cout << red << "Failed RPC" << reset << endl;
+    //   }
+    // }
+  }
+
+  /** User execution for testing the RPC servers */
+  void entrypoint(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    //   ./target/app --mode user --command set --key k1 --value v1 --target 127.0.1.1:8002
+    if (!variables.count("command"))
+      throw "`command` argument is required";
+
+    // if command exists
+    std::string command = variables["command"].as<std::string>();  // defaults to `get`
+    std::string target = variables["target"].as<std::string>();    // defaults to `127.0.1.1:8000`
+    std::string key = variables["key"].as<std::string>();          // defaults to `default_key`
+    std::string value = variables["value"].as<std::string>();      // defaults to `default_value`
+    std::map<std::string, TestFnPtr_t> testFunctionMap;
+
+    // map test functions:
+    testFunctionMap["test_start_session"] = test_start_session;
+    testFunctionMap["test_keep_alive"] = test_keep_alive;
+    testFunctionMap["test_create"] = test_create;
+
+    std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
+
+    // handle special cases:
+    if (command.compare("a command that is not of type TestFnPtr_t") == 0) {
+      // do custom things...
+    } else if (testFunctionMap.find(command) != testFunctionMap.end()) {
+      cout << blue << "command: " << command << reset << endl;
+      testFunctionMap[command](config, variables);
+      return;
+    }
+
+    // fallback
+    std::cout << red << "No test case found for command: " << command << reset << std::endl;
+    exit(1);
+  }
+
+}  // namespace test
+
 namespace benchmark {
   // This test is not fully automated and required manual setup of cluster beforehand.
   void run(rpc::Endpoint& c, const size_t size) {
@@ -31,87 +114,6 @@ namespace benchmark {
   // BENCHMARK(benchmark_function)->Arg(1);  // ->Arg(200000)->Arg(400000);
   BENCHMARK(benchmark::function)->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
 }  // namespace benchmark
-
-namespace test {
-
-  void test_start_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    cout << blue << "command: test_start_session" << reset << endl;
-
-    grpc::Status r = app::client::start_session();
-
-    if (r.ok()){
-      cout << green << "Test passed for this configuration." << reset << endl;
-    }else{
-      cout << red << "Failed to start a session with any nodes." << reset << endl;
-    }
-    
-  }
-
-    void test_keep_alive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    cout << blue << "command: test_heartbeat" << reset << endl;
-
-    std::map<std::string, interface::LockStatus> m;
-
-    for (const auto& [key, node] : *(app::State::memberList)) {
-        cout << key << endl;
-
-        auto deadline = std::chrono::system_clock::now() +
-    std::chrono::milliseconds(100);
-
-        std::pair<Status, int32_t> r = node->endpoint.keep_alive("", m, deadline);
-        auto [status, v] = r;
-
-        if (status.ok()){
-          cout << "Value returned: " << v << endl;
-        }else{
-          cout << red << "Failed RPC" << reset << endl;
-        }
-      }
-    
-  }
-
-
-
-  void test_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    cout << blue << "command: test_create" << reset << endl;
-    return;
-    // for (const auto& [key, node] : *(app::State::memberList)) {
-    //   cout << key << endl;
-    //   std::pair<Status, int> r = node->endpoint.open("/test", );
-    //   auto [status, v] = r;
-
-    //   if (status.ok()){
-    //     cout << "Value returned: " << v << endl;
-    //   }else{
-    //     cout << red << "Failed RPC" << reset << endl;
-    //   }
-    // }
-  }
-
-  /** User execution for testing the RPC servers */
-  void entrypoint(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    //   ./target/app --mode user --command set --key k1 --value v1 --target 127.0.1.1:8002
-    if (!variables.count("command"))
-      throw "`command` argument is required";
-
-    // if command exists
-    std::string command = variables["command"].as<std::string>();
-    std::string target = variables["target"].as<std::string>();
-    std::string key = variables["key"].as<std::string>();
-    std::string value = variables["value"].as<std::string>();
-
-    std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
-
-    if (command.compare("test_start_session") == 0) {
-      test_start_session(config, variables);
-    } else if(command.compare("test_keep_alive") == 0){
-      test_keep_alive(config, variables);
-    }else {
-      cout << red << "No command matches " << command << reset << endl;
-    }
-  }
-
-}  // namespace test
 
 /** 
  * initialize google/benchmark main with custom code

@@ -202,7 +202,7 @@ namespace utility::parse {
         user.add_options()("target,t", po::value<std::string>()->default_value("127.0.1.1:8000"), "target address to send to");
         user.add_options()("command,c", po::value<std::string>()->default_value("get"), "command");
         user.add_options()("key,k", po::value<std::string>()->default_value("default-key"), "key");
-        user.add_options()("value,v", po::value<std::string>()->default_value("default-key"), "value");
+        user.add_options()("value,v", po::value<std::string>()->default_value("default-value"), "value");
 
         cmd_options.add(user);   // set options allowed on command line
         file_options.add(user);  // set options allowed in config file
@@ -283,11 +283,10 @@ namespace utility::server {
 
 }  // namespace utility::server
 
-
 namespace utility::structs {
   const uint64_t READ = 0x1;
   const uint64_t WRITE = 0x2;
   const uint64_t CREATE_DIRECTORY = 0x4;
   const uint64_t CREATE_FILE = 0x8;
   const uint64_t EPHEMERAL = 0x10;
-} // namespace utility::structs
+}  // namespace utility::structs
