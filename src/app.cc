@@ -41,12 +41,12 @@ namespace rpc{
     }
 
     if((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0){
-      return Status::OK;
+      return app::server::create_session(request->client_id());
     }
     return Status::CANCELLED;
   }
 
-  grpc::Status Endpoint::init_session() {
+  grpc::Status Endpoint::init_session(std::string client_id) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
@@ -57,6 +57,7 @@ namespace rpc{
     InitSessionRequest request;
     Empty response;
 
+    request.set_client_id(client_id);
 
     grpc::Status status = this->stub->init_session(&context, request, &response);
 
@@ -140,6 +141,7 @@ namespace app {
   std::shared_ptr<Node> State::currentNode = nullptr;
   std::shared_ptr<std::string> State::master = nullptr;
 
+  // This method does initializing of information common to both servers and clients
   void initializeStaticInstance(std::shared_ptr<utility::parse::Config> config, std::vector<std::string> addressList) {
     State::config = config;
 
@@ -162,6 +164,7 @@ namespace app {
 
 }  // namespace app
 
+
 namespace app::server {
   std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> info::locks = nullptr;
   std::shared_ptr<std::map<std::string, std::shared_ptr<Session>>> info::sessions = nullptr;
@@ -170,6 +173,7 @@ namespace app::server {
     info::locks = std::make_shared<std::map<std::string, std::shared_ptr<Lock>>>();
     info::sessions = std::make_shared<std::map<std::string, std::shared_ptr<Session>>>();
 
+    // Only need to add self to memberlist/current node if we are a node (server)
     utility::parse::Address selfAddress = State::config->getAddress<app::Service::NODE>();
     auto iterator = State::memberList->find(selfAddress.toString());
     if (iterator == State::memberList->end()) {  // not found
@@ -180,9 +184,9 @@ namespace app::server {
     }
 
     // Find leader
-    if(config->flag.leader){
+    if(State::config->flag.leader){
       // We are leader, used mainly for testing
-      if(config->flag.debug){
+      if(State::config->flag.debug){
         std::cout << termcolor::yellow << "We are leader" << termcolor::reset << std::endl;
       }
       State::master = std::make_shared<std::string>(selfAddress.toString());
@@ -192,7 +196,55 @@ namespace app::server {
     }
   }
 
+  grpc::Status create_session(std::string client_id){
+    // Check if we already have a session with the client
+    if(info::sessions->find(client_id) != info::sessions->end()){
+      if(State::config->flag.debug){
+        std::cout << termcolor::yellow << "Client with id " << client_id << " already has a session that hasn't yet been terminated." << termcolor::reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
+    }
+
+    // Initialize session struct for this new session
+    std::shared_ptr session = std::make_shared<Session>();
+    session->client_id = client_id;
+    session->start_time = chrono::system_clock::now();
+    session->lease_length = chrono::milliseconds(utility::DEFAULT_LEASE_EXTENSION);
+    session->block_reply = std::make_shared<msd::channel<int>>();
+    session->locks = std::make_shared<std::map<std::string, std::shared_ptr<Lock>>>();
+    session->terminated = false;
+    session->terminate_indicator = std::make_shared<msd::channel<int>>();
+
+    // Add session struct to our map of sessions
+    info::sessions->insert(std::make_pair(client_id, session));
+
+    // if(State::config->flag.debug){
+    //   std::cout << termcolor::cyan << "Session created:" << endl << termcolor::grey
+    //     << "client_id: " << session->client_id << endl
+    //     << "start time: " << chrono::system_clock::to_time_t(session->start_time) << endl
+    //     << "lease length: " << session->lease_length.count() << "ms" << termcolor::reset << endl;
+    // }
+
+    // Launch async function to loop and populate the channels for this session as needed
+    // TODO: Make this a thread instead so we can use std::this_thread::sleep_for
+    // and run the main session tracking logic once per second
+    auto i = std::async(std::launch::async, maintain_session, info::sessions->at(client_id));
+
+    return Status::OK;
+  }
+
+  void maintain_session(std::shared_ptr<Session> session){
+    if(State::config->flag.debug){
+      std::cout << termcolor::cyan << "Maintaining the following session:" << endl << termcolor::grey
+        << "client_id: " << session->client_id << endl
+        << "start time: " << chrono::system_clock::to_time_t(session->start_time) << endl
+        << "lease length: " << session->lease_length.count() << "ms" << termcolor::reset << endl;
+    }
+
+  }
+
 } // namespace app::server
+
 
 namespace app::client {
   std::string info::session_id;
@@ -221,7 +273,7 @@ namespace app::client {
 
     // Try to establish session with all nodes in cluster
     for (const auto& [key, node] : *(State::memberList)) {
-      grpc::Status status = node->endpoint.init_session();
+      grpc::Status status = node->endpoint.init_session(info::session_id);
 
       if(!status.ok()){ // If server is down or replies with grpc::StatusCode::ABORTED
         if(State::config->flag.debug){

@@ -31,7 +31,7 @@ namespace app::server {
   struct Lock{
     std::string path;                     // Path to the file
     LockStatus status;                    // Is it shared or exclusive?
-    std::map<std::string, bool> owners;   // Who owns the lock
+    std::shared_ptr<std::map<std::string, bool>> owners;   // Who owns the lock
     std::string content;                  // File content
   };
 
@@ -40,10 +40,10 @@ namespace app::server {
     std::string client_id;                           // Id of the client with whom this session exists
     chrono::system_clock::time_point start_time;     // Start time of the local session
     chrono::milliseconds lease_length;               // Length of the session lease
-    msd::channel<int> block_reply;                   // Channel used for blocking the reply to keep_alive rpcs
-    std::map<std::string, Lock> locks;               // Locks acquired with the session
+    std::shared_ptr<msd::channel<int>> block_reply;                   // Channel used for blocking the reply to keep_alive rpcs
+    std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> locks;               // Locks acquired with the session
     bool terminated;                                 // Indicator of if the session has been terminated manually
-    msd::channel<int> terminate_indicator;           // Used to tell the session monitor if the session has been terminated
+    std::shared_ptr<msd::channel<int>> terminate_indicator;           // Used to tell the session monitor if the session has been terminated
   };
 
   // Information on the server
@@ -53,7 +53,8 @@ namespace app::server {
   };
 
   void init_server_info();
-  void create_session(std::string);
+  grpc::Status create_session(std::string);
+  void maintain_session(std::shared_ptr<Session>);
 }
 
 namespace app::client {

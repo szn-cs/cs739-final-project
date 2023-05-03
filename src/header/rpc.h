@@ -25,7 +25,7 @@ namespace rpc {
     }
 
     grpc::Status ping();
-    grpc::Status init_session();
+    grpc::Status init_session(std::string);
     std::pair<grpc::Status, int32_t> keep_alive(std::string, chrono::system_clock::time_point); // Used for communicating with a known master
     std::pair<grpc::Status, int32_t> keep_alive(std::string, std::map<std::string, LockStatus>, chrono::system_clock::time_point); // Used when in jeopardy
     
