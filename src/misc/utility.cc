@@ -282,3 +282,12 @@ namespace utility::server {
   template void server::run_gRPC_server<rpc::RPC>(utility::parse::Address address);  // explicit initiation - prevent linker errors for separate dec & def of template
 
 }  // namespace utility::server
+
+
+namespace utility::structs {
+  const uint64_t READ = 0x1;
+  const uint64_t WRITE = 0x2;
+  const uint64_t CREATE_DIRECTORY = 0x4;
+  const uint64_t CREATE_FILE = 0x8;
+  const uint64_t EPHEMERAL = 0x10;
+} // namespace utility::structs

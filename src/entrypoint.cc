@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 
     // handle directory:
     fs::create_directories(fs::absolute(config->directory));  // create database direcotry directory if doesn't exist
-
+    
     // RPC services on separate threads
     utility::parse::Address a = config->getAddress<app::Service::NODE>();
     std::thread t(utility::server::run_gRPC_server<rpc::RPC>, a);
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
   };
 
   switch (config->mode) {
-    case utility::parse::Mode::APP:
+    case utility::parse::Mode::APP:      
     default:
       m_app();
       break;

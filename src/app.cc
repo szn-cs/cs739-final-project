@@ -34,13 +34,48 @@ namespace rpc {
     return std::make_pair(status, response.value());
   }
 
+
+  Status RPC::get_master(ServerContext* context, const interface::Empty* request, interface::GetMasterResponse* response){
+    if (app::State::config->flag.debug) {
+      const std::string className = "RPC";
+      const string n = className + "::" + __func__;
+      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+    }
+
+    response->set_addr(*(app::State::master));
+    return Status::OK;
+  }
+
+  std::pair<grpc::Status, std::string> Endpoint::get_master() {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+    }
+
+    ClientContext context;
+    Empty request;
+    GetMasterResponse response;
+
+
+    if (app::State::config->flag.debug) cout << yellow << "calling RPC::func @ " << this->address << " endpoint;" << reset << endl;
+    grpc::Status status = this->stub->get_master(&context, request, &response);
+
+    return std::make_pair(status, response.addr());
+  }
+
 }  // namespace rpc
 
+/**
+ * @brief Setup/initialization for a server
+ * 
+ */
 namespace app {
 
   std::shared_ptr<std::map<std::string, std::shared_ptr<Node>>> State::memberList = nullptr;
   std::shared_ptr<utility::parse::Config> State::config = nullptr;
   std::shared_ptr<Node> State::currentNode = nullptr;
+  std::shared_ptr<std::string> State::master = nullptr;
 
   void initializeStaticInstance(std::shared_ptr<utility::parse::Config> config, std::vector<std::string> addressList) {
     State::config = config;
@@ -68,6 +103,41 @@ namespace app {
       std::cout << termcolor::grey << "Size of cluster (including self): " << State::memberList->size() << reset << std::endl;
       cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
     }
+
+    // Find leader
+    if(config->flag.leader){
+      // We are leader, used mainly for testing
+      if(config->flag.debug){
+        std::cout << termcolor::yellow << "We are leader" << termcolor::reset << std::endl;
+      }
+      State::master = std::make_shared<std::string>(selfAddress.toString());
+    }else{
+      // Run Paxos to find master
+    }
   }
 
 }  // namespace app
+
+/**
+ * @brief 
+ * 
+ */
+namespace app {
+
+
+
+
+} // namespace app
+
+
+namespace client {
+  uint64_t client::info::session_id;
+
+  void init_client(){
+    
+  }
+
+  void start_session(){
+
+  }
+}

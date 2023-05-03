@@ -9,6 +9,7 @@ namespace rpc {
   class RPC : public interface::RPC::Service {
    public:
     grpc::Status func(ServerContext*, const interface::Request*, interface::Response*) override;
+    grpc::Status get_master(ServerContext*, const interface::Empty*, interface::GetMasterResponse*) override;
   };
 
   /**
@@ -23,6 +24,7 @@ namespace rpc {
     }
 
     std::pair<grpc::Status, int> func(int v);
+    std::pair<grpc::Status, std::string> get_master();
 
     std::string address;
     std::shared_ptr<interface::RPC::Stub> stub;

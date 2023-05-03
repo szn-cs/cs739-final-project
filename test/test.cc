@@ -42,11 +42,58 @@ namespace test {
       std::pair<Status, int> r = node->endpoint.func(123456);
       auto [status, v] = r;
 
-      if (status.ok())
+      if (status.ok()){
         cout << "Value returned: " << v << endl;
-      else
+      }else{
         cout << red << "Failed RPC" << reset << endl;
+      }
     }
+  }
+
+  void test_rpc_get_master(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    cout << blue << "command: test_get_master" << reset << endl;
+    for (const auto& [key, node] : *(app::State::memberList)) {
+      std::pair<Status, std::string> r = node->endpoint.get_master();
+      auto [status, v] = r;
+
+      if (status.ok()){
+        cout << "Value returned: " << v << endl;
+      }else{
+        cout << red << "Failed RPC" << reset << endl;
+      }
+    }
+  }
+
+  void test_start_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    cout << blue << "command: test_start_session" << reset << endl;
+    for (const auto& [key, node] : *(app::State::memberList)) {
+      std::pair<Status, std::string> r = node->endpoint.get_master();
+      auto [status, v] = r;
+
+      if (status.ok()){
+
+      }else{
+        cout << red << "Failed RPC" << reset << endl;
+      }
+    }
+  }
+
+
+
+  void test_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    cout << blue << "command: test_create" << reset << endl;
+    return;
+    // for (const auto& [key, node] : *(app::State::memberList)) {
+    //   cout << key << endl;
+    //   std::pair<Status, int> r = node->endpoint.open("/test", );
+    //   auto [status, v] = r;
+
+    //   if (status.ok()){
+    //     cout << "Value returned: " << v << endl;
+    //   }else{
+    //     cout << red << "Failed RPC" << reset << endl;
+    //   }
+    // }
   }
 
   /** User execution for testing the RPC servers */
@@ -65,8 +112,8 @@ namespace test {
 
     if (command.compare("test_1") == 0) {
       test_1(config, variables);
-    } else if (command.compare("test_2") == 0) {
-      // test_1(config, variables);
+    } else if (command.compare("test_rpc_get_master") == 0) {
+      test_rpc_get_master(config, variables);
     } else if (command.compare("test_3") == 0) {
       // test_1(config, variables);
     } else {

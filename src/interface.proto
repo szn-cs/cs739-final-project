@@ -3,6 +3,7 @@ package interface;   // similar to namespace, avoid conflicts
 
 service RPC { 
     rpc func(Request) returns (Response) {};
+    rpc get_master(Empty) returns (GetMasterResponse) {};
 }
 
 message Empty {
@@ -16,3 +17,6 @@ message Response {
   int32 value = 1; 
 }
 
+message GetMasterResponse {
+  string addr = 1;
+}
