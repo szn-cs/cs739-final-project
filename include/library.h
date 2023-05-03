@@ -43,7 +43,7 @@
 #include <thread>
 #include <vector>
 
-#include "../../dependency/variadic_table/include/VariadicTable.h"  // https://github.com/friedmud/variadic_table
+#include "VariadicTable.h"  // https://github.com/friedmud/variadic_table
 #include "interface.grpc.pb.h"
 
 using namespace std;

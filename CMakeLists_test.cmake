@@ -1,12 +1,11 @@
 set(TEST_FOLDER "${PROJECT_SOURCE_DIR}/test")
 
+set(SERVER_BINARY_NAME test)
+
 set(SRC_FILES 
   ${TEST_FOLDER}/test.cc
   ${SOURCE_FOLDER}/app.cc
   ${SOURCE_FOLDER}/utility.cc
-)
-set(SERVER_BINARY_NAME 
-  test
 )
 
 include(CheckFunctionExists)
@@ -60,6 +59,10 @@ if (${HAVE_XATTR})
     target_compile_definitions(${SERVER_BINARY_NAME} PUBLIC HAVE_XATTR)
 endif ()
 
+# include headers --------------------------------
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include) # include headers - simplifies C++ include statements;  
+include_directories(${PROJECT_SOURCE_DIR}/dependency/variadic_table/include)
+include_directories(${PROJECT_SOURCE_DIR}/dependency/NuRaft/include)
 
 install(TARGETS ${SERVER_BINARY_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 #--------------------------------------------------------

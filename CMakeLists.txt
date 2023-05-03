@@ -41,13 +41,16 @@ set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
 
     # Benchmark package 
     find_package(benchmark CONFIG REQUIRED)
+
 #-------------------------------------------
 
-# includes ----------------------------
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include) # include headers - simplifies C++ include statements;  TODO: expose client header functions once build moves to a library, rather than an executable
+# TODO: expose client header functions once build moves to a library rather than an executable
+
+# extend cmake config ----------------------------
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_interface.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_app.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_test.cmake)
+
 #-------------------------------------------
 
 # CPACK steers build files to proper paths (maybe used later in build process)
