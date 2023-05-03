@@ -7,3 +7,6 @@
 [submodule "dependency/variadic_table"]
 	path = dependency/variadic_table
 	url = https://github.com/friedmud/variadic_table
+[submodule "dependency/NuRaft"]
+	path = dependency/NuRaft
+	url = https://github.com/eBay/NuRaft

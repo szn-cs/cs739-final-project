@@ -4,6 +4,8 @@
 build() {
   source ./script/setenv.sh
 
+  build_NuRaft_dependency
+
   # create make files &
   # build through `cmake`  or use `make -w -C ./target/config/`
   cmake -S . -B ./target/config && cmake --build ./target/config --parallel # --verbose
@@ -13,6 +15,33 @@ build() {
   cp ./target/config/app ./target/
   cp ./target/config/test ./target/
   cp ./config/*.ini ./target/
+}
+
+build_NuRaft_dependency() {
+  PKG=./dependency/NuRaft
+
+  pushd $PKG
+  {
+    ./prepare.sh # or `git submodule update --init`
+    mkdir build
+    pushd build
+    {
+      cmake ../
+      make
+    }
+    popd
+  }
+  popd
+
+  # test
+
+  test() {
+    # [optional] test functionality of static built library
+    #            (use that to verify no external factors cause issues)
+    pushd $PKG/build
+    ./runtests.sh
+    popd
+  }
 }
 
 build_optimized() {

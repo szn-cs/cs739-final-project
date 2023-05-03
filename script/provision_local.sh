@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## Use only if `builtin-baseline` exist in vcpkg && biuld fails
+## Use only if `builtin-baseline` exist in vcpkg.json && biuld fails
 function fix_vcpkg() {
   WARNING='\033[93m'
   BOLD='\033[1m'
@@ -37,7 +37,7 @@ git submodule update --init --remote
 git submodule update --init --recursive
 
 ## provision system dependencies
-DEPENDENCIES=("build-essential" "autoconf" "libtool" "pkg-config" "gcc" "cmake")
+DEPENDENCIES=("build-essential" "autoconf" "libtool" "pkg-config" "gcc" "cmake" "openssl" "libssl-dev" "libz-dev")
 
 sudo apt -y update && sudo apt -y upgrade
 for i in ${DEPENDENCIES}; do
