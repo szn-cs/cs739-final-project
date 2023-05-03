@@ -74,14 +74,23 @@ namespace rpc {
       std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
     }
 
+    if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) != 0) {
+      // We are not master
+      return Status(StatusCode::ABORTED, "This server is not master.");
+    }
+
     if (context->IsCancelled()) {
       return Status(StatusCode::CANCELLED, "Exceeded deadline.");
     }
 
+    int32_t lease_duration = app::server::attempt_extend_session(request->client_id());
+    response->set_lease_duration(lease_duration);
+
     return Status::OK;
   }
 
-  std::pair<grpc::Status, int32_t> Endpoint::keep_alive(std::string client_id, chrono::system_clock::time_point deadline) {
+
+  std::pair<grpc::Status, int64_t> Endpoint::keep_alive(std::string client_id, chrono::system_clock::time_point deadline) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
@@ -91,20 +100,20 @@ namespace rpc {
     ClientContext context;
     KeepAliveRequest request;
     KeepAliveResponse response;
-
-    // Set deadline
+    request.set_client_id(client_id);
     context.set_deadline(deadline);
 
     grpc::Status status = this->stub->keep_alive(&context, request, &response);
 
-    std::pair<grpc::Status, int32_t> res;
+    std::pair<grpc::Status, int64_t> res;
     res.first = status;
-    res.second = 0;  // TODO: Will implement later
+    res.second = response.lease_duration();
 
     return res;
   }
 
-  std::pair<grpc::Status, int32_t> Endpoint::keep_alive(std::string client_id, std::map<std::string, LockStatus> locks, chrono::system_clock::time_point deadline) {
+
+  std::pair<grpc::Status, int64_t> Endpoint::keep_alive(std::string client_id, std::map<std::string, LockStatus> locks, chrono::system_clock::time_point deadline) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
@@ -114,16 +123,15 @@ namespace rpc {
     ClientContext context;
     KeepAliveRequest request;
     KeepAliveResponse response;
-
-    // Set deadline
+    request.set_client_id(client_id);
+    *(request.mutable_locks()) = google::protobuf::Map<std::string, LockStatus>(locks.begin(), locks.end());
     context.set_deadline(deadline);
 
     grpc::Status status = this->stub->keep_alive(&context, request, &response);
 
-    std::pair<grpc::Status, int32_t> res;
+    std::pair<grpc::Status, int64_t> res;
     res.first = status;
-    res.second = 0;  // TODO: Will implement later
-
+    res.second = response.lease_duration();
     return res;
   }
 
@@ -165,10 +173,12 @@ namespace app {
 namespace app::server {
   std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> info::locks = nullptr;
   std::shared_ptr<std::map<std::string, std::shared_ptr<Session>>> info::sessions = nullptr;
+  // std::shared_ptr<std::map<std::string, std::thread>> info::session_managers = nullptr;
 
   void init_server_info() {
     info::locks = std::make_shared<std::map<std::string, std::shared_ptr<Lock>>>();
     info::sessions = std::make_shared<std::map<std::string, std::shared_ptr<Session>>>();
+    // info::session_managers = std::make_shared<std::map<std::string, std::thread>>();
 
     // Only need to add self to memberlist/current node if we are a node (server)
     utility::parse::Address selfAddress = State::config->getAddress<app::Service::NODE>();
@@ -210,22 +220,13 @@ namespace app::server {
     session->block_reply = std::make_shared<msd::channel<int>>();
     session->locks = std::make_shared<std::map<std::string, std::shared_ptr<Lock>>>();
     session->terminated = false;
-    session->terminate_indicator = std::make_shared<msd::channel<int>>();
 
     // Add session struct to our map of sessions
     info::sessions->insert(std::make_pair(client_id, session));
 
-    // if(State::config->flag.debug){
-    //   std::cout << termcolor::cyan << "Session created:" << endl << termcolor::grey
-    //     << "client_id: " << session->client_id << endl
-    //     << "start time: " << chrono::system_clock::to_time_t(session->start_time) << endl
-    //     << "lease length: " << session->lease_length.count() << "ms" << termcolor::reset << endl;
-    // }
-
-    // Launch async function to loop and populate the channels for this session as needed
-    // TODO: Make this a thread instead so we can use std::this_thread::sleep_for
-    // and run the main session tracking logic once per second
-    auto i = std::async(std::launch::async, maintain_session, info::sessions->at(client_id));
+    // Launch a thread to loop and populate the channels for this session as needed
+    std::thread t(maintain_session, info::sessions->at(client_id));
+    t.detach();
 
     return Status::OK;
   }
@@ -238,13 +239,77 @@ namespace app::server {
                 << "start time: " << chrono::system_clock::to_time_t(session->start_time) << endl
                 << "lease length: " << session->lease_length.count() << "ms" << termcolor::reset << endl;
     }
+
+    // We don't want to block the first keep alive
+    int in = 1;
+    in >> *(session->block_reply);
+
+    while(true){
+      chrono::system_clock::time_point lease_expires = session->start_time + session->lease_length;
+      chrono::system_clock::duration time_until_expire = chrono::nanoseconds(0);
+
+      // Check if we are now within a second of expiration
+      if(lease_expires > chrono::system_clock::now()){
+        time_until_expire = lease_expires - std::chrono::system_clock::now();
+      }
+
+      // Session timed out
+      if(time_until_expire == chrono::nanoseconds(0)){
+        if (State::config->flag.debug) {
+          std::cout << termcolor::yellow << "Lease with client " << session->client_id << " is expired (i.e. session maitenence thread dies)." << termcolor::reset << std::endl;
+        }
+
+        end_session(session);
+        in >> *(session->block_reply);
+        return;
+      }
+
+      // Ready to reply to client
+      if(time_until_expire <= chrono::seconds(1)){
+        if (State::config->flag.debug) {
+          std::cout << termcolor::grey << "Triggering keep_alive response to " << session->client_id << "." << termcolor::reset << std::endl;
+        }
+        in >> *(session->block_reply);
+      }
+      // Run the loop every second, a granularity that should suffice
+      std::this_thread::sleep_for(chrono::seconds(1));
+    }
+
+  }
+
+  void end_session(std::shared_ptr<Session> session){
+    session->terminated = true;
+    
+    // Release all locks
+    for(auto& [key, lock] : *(session->locks)){
+      // TODO:: Implement
+    }
+  }
+
+
+  int64_t attempt_extend_session(std::string client_id){
+    std::shared_ptr<Session> session = info::sessions->at(client_id);
+
+    // Will block until the session manager indicates it is time to send a reply
+    int i = 0;
+    i << *(session->block_reply);
+
+    // Set the correct lease length
+    if(!session->terminated){
+      if (State::config->flag.debug) {
+        std::cout << termcolor::grey << "Extending lease for client " << session->client_id << "." << termcolor::reset << std::endl;
+      }
+      session->lease_length = session->lease_length + chrono::milliseconds(utility::DEFAULT_LEASE_EXTENSION);
+    }
+
+    // Return so that we can send response from the rpc service
+    return session->lease_length.count();
   }
 
 }  // namespace app::server
 
 namespace app::client {
   std::string info::session_id;
-  std::thread info::session;
   chrono::system_clock::time_point info::lease_start;
   chrono::milliseconds info::lease_length;
   std::shared_ptr<map<std::string, LockStatus>> info::locks;
@@ -273,8 +338,8 @@ namespace app::client {
       if (!status.ok()) {  // If server is down or replies with grpc::StatusCode::ABORTED
         if (State::config->flag.debug) {
           cout << termcolor::grey << "Node " << key << " replied with an error." << termcolor::reset << endl;
-          continue;
         }
+        continue;
       }
 
       // Session established with server
@@ -288,7 +353,44 @@ namespace app::client {
       }
       return Status::CANCELLED;
     }
+    
+    // Thread to handle maintaining the session (i.e. issuing keep_alives and such)
+    std::thread t(maintain_session);
+    t.detach();
 
     return Status::OK;
+  }
+
+  void maintain_session(){
+    if (State::config->flag.debug) {
+      cout << termcolor::yellow << "Beginning session maitenence." << termcolor::reset << endl;
+    }
+
+    // Shouldn't ever happen
+    if(info::master == nullptr){
+      return;
+    }    
+
+    while(true){
+      // Wait until response or the deadline is reached
+      chrono::system_clock::time_point deadline = info::lease_start + info::lease_length;
+      std::pair<grpc::Status, int64_t> r = info::master->endpoint.keep_alive(info::session_id, deadline);
+      auto [status, new_lease_length] = r;
+
+      // If we successfully heard back from server before deadline
+      if(status.ok()){
+        if (State::config->flag.debug) {
+          cout << termcolor::grey << "keep_alive response received. Lease extended." << termcolor::reset << endl;
+        }
+        info::lease_length = chrono::milliseconds(new_lease_length);
+      }else{
+        if (State::config->flag.debug) {
+          cout << termcolor::red << "Entering jeopardy." << termcolor::reset << endl;
+        }
+        // TODO:: Implement jeopardy
+        info::jeopardy = true;
+        return;
+      }
+    }
   }
 }  // namespace app::client

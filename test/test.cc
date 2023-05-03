@@ -12,17 +12,13 @@ namespace test {
     }
   }
 
-  void test_keep_alive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    std::map<std::string, interface::LockStatus> m;
-
+  void test_single_keep_alive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
     for (const auto& [key, node] : *(app::State::memberList)) {
       cout << key << endl;
 
-      auto deadline = std::chrono::system_clock::now() +
-                      std::chrono::milliseconds(100);
-
-      std::pair<Status, int32_t> r = node->endpoint.keep_alive("", m, deadline);
-      auto [status, v] = r;
+      grpc::Status r1 = app::client::start_session();
+      std::pair<grpc::Status, int64_t> r2 = node->endpoint.keep_alive(app::client::info::session_id, chrono::system_clock::now() + chrono::milliseconds(6000));
+      auto [status, v] = r2;
 
       if (status.ok()) {
         cout << "Value returned: " << v << endl;
@@ -30,6 +26,12 @@ namespace test {
         cout << red << "Failed RPC" << reset << endl;
       }
     }
+  }
+
+  void test_maintain_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
+    grpc::Status r1 = app::client::start_session();
+    // Idrk how to test for this without just blocking and allowing for a few rounds of keep_alives to be exchanged
+    std::this_thread::sleep_for(chrono::seconds(60));
   }
 
   void test_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
@@ -62,8 +64,9 @@ namespace test {
 
     // map test functions:
     testFunctionMap["test_start_session"] = test_start_session;
-    testFunctionMap["test_keep_alive"] = test_keep_alive;
+    testFunctionMap["test_single_keep_alive"] = test_single_keep_alive;
     testFunctionMap["test_create"] = test_create;
+    testFunctionMap["test_maintain_session"] = test_maintain_session;
 
     std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
 

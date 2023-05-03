@@ -26,6 +26,6 @@ message KeepAliveRequest{
 }
 
 message KeepAliveResponse{
-  int32 lease_duration = 1;
+  int64 lease_duration = 1;
 }
 

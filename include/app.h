@@ -42,25 +42,31 @@ namespace app::server {
     std::shared_ptr<msd::channel<int>> block_reply;                       // Channel used for blocking the reply to keep_alive rpcs
     std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> locks;  // Locks acquired with the session
     bool terminated;                                                      // Indicator of if the session has been terminated manually
-    std::shared_ptr<msd::channel<int>> terminate_indicator;               // Used to tell the session monitor if the session has been terminated
+    // bool response_ready;                                                  // The condition that will be blocked on when waiting to send response
+    // std::mutex m;                                                         // Used with the condition variable to allow for waiting
+    // std::condition_variable cv;                                           // Used to notify if it is time to respond to a keep alive rpc
+    // std::shared_ptr<msd::channel<int>> terminate_indicator;               // Used to tell the session monitor if the session has been terminated
   };
 
   // Information on the server
   struct info {
     static std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> locks;        // Map of filepaths to lock structures
     static std::shared_ptr<std::map<std::string, std::shared_ptr<Session>>> sessions;  // Map of client ids to sessions
+    // static std::shared_ptr<std::map<std::string, std::thread>> session_managers;       // Map of client ids to session manager threads
   };
 
   void init_server_info();
   grpc::Status create_session(std::string);
   void maintain_session(std::shared_ptr<Session>);
+  void end_session(std::shared_ptr<Session>);
+  int64_t attempt_extend_session(std::string); // TODO: Make a version that takes a map of locks, for when in jeopardy
 }  // namespace app::server
 
 namespace app::client {
   // Information about the client
   struct info {
     static std::string session_id;                                    // Will be equal to the client's ip:port string for simplicity
-    static std::thread session;                                       // The thread in which the session is managed
+    // static std::thread session;                                       // The thread in which the session is managed
     static chrono::system_clock::time_point lease_start;              // The start time of the local lease
     static chrono::milliseconds lease_length;                         // Time remaining on the local lease
     static std::shared_ptr<std::map<std::string, LockStatus>> locks;  // LockStatus is declared in interface.proto so it can be sent in rpcs
@@ -79,4 +85,5 @@ namespace app::client {
    * 
    */
   grpc::Status start_session();
+  void maintain_session();
 }  // namespace app::client
