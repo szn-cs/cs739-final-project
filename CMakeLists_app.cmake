@@ -3,7 +3,7 @@ set(TEST_FOLDER "${PROJECT_SOURCE_DIR}/test")
 set(SERVER_SRC 
   ${SOURCE_FOLDER}/entrypoint.cc
   ${SOURCE_FOLDER}/app.cc
-  ${SOURCE_FOLDER}/misc/utility.cc
+  ${SOURCE_FOLDER}/utility.cc
 )
 set(SERVER_BINARY_NAME 
   app

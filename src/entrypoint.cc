@@ -1,4 +1,4 @@
-#include "./header/common.h"
+#include "common.h"
 
 /**
  * initialize configurations, run RPC servers, and start consensus coordination
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 
     // Initialize the server data structures
     app::server::init_server_info();
-    
+
     // RPC services on separate threads
     utility::parse::Address a = config->getAddress<app::Service::NODE>();
     std::thread t(utility::server::run_gRPC_server<rpc::RPC>, a);
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
   };
 
   switch (config->mode) {
-    case utility::parse::Mode::APP:      
+    case utility::parse::Mode::APP:
     default:
       m_app();
       break;

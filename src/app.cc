@@ -1,4 +1,4 @@
-#include "./header/common.h"
+#include "common.h"
 
 namespace rpc {
 
@@ -29,18 +29,18 @@ namespace rpc {
 
     return status;
   }
-}
+}  // namespace rpc
 
-namespace rpc{
+namespace rpc {
   /************************ init_session rpcs ************************/
-  Status RPC::init_session(ServerContext* context, const interface::InitSessionRequest* request, interface::Empty* response){
+  Status RPC::init_session(ServerContext* context, const interface::InitSessionRequest* request, interface::Empty* response) {
     if (app::State::config->flag.debug) {
       const std::string className = "RPC";
       const string n = className + "::" + __func__;
       std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
     }
 
-    if((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0){
+    if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0) {
       return app::server::create_session(request->client_id());
     }
     return Status::CANCELLED;
@@ -63,25 +63,25 @@ namespace rpc{
 
     return status;
   }
-}
+}  // namespace rpc
 
-namespace rpc{
+namespace rpc {
   /************************ keep_alive rpcs ************************/
-  grpc::Status RPC::keep_alive(ServerContext* context, const interface::KeepAliveRequest* request, interface::KeepAliveResponse* response){
+  grpc::Status RPC::keep_alive(ServerContext* context, const interface::KeepAliveRequest* request, interface::KeepAliveResponse* response) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
       std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
     }
 
-    if(context->IsCancelled()){
+    if (context->IsCancelled()) {
       return Status(StatusCode::CANCELLED, "Exceeded deadline.");
     }
 
     return Status::OK;
   }
 
-  std::pair<grpc::Status, int32_t> Endpoint::keep_alive(std::string client_id, chrono::system_clock::time_point deadline){
+  std::pair<grpc::Status, int32_t> Endpoint::keep_alive(std::string client_id, chrono::system_clock::time_point deadline) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
@@ -99,13 +99,12 @@ namespace rpc{
 
     std::pair<grpc::Status, int32_t> res;
     res.first = status;
-    res.second = 0; // TODO: Will implement later
+    res.second = 0;  // TODO: Will implement later
 
     return res;
   }
 
-
-  std::pair<grpc::Status, int32_t> Endpoint::keep_alive(std::string client_id, std::map<std::string, LockStatus> locks, chrono::system_clock::time_point deadline){
+  std::pair<grpc::Status, int32_t> Endpoint::keep_alive(std::string client_id, std::map<std::string, LockStatus> locks, chrono::system_clock::time_point deadline) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
@@ -123,7 +122,7 @@ namespace rpc{
 
     std::pair<grpc::Status, int32_t> res;
     res.first = status;
-    res.second = 0; // TODO: Will implement later
+    res.second = 0;  // TODO: Will implement later
 
     return res;
   }
@@ -159,17 +158,15 @@ namespace app {
       std::cout << termcolor::grey << "Size of cluster: " << State::memberList->size() << reset << std::endl;
       cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
     }
-
   }
 
 }  // namespace app
-
 
 namespace app::server {
   std::shared_ptr<std::map<std::string, std::shared_ptr<Lock>>> info::locks = nullptr;
   std::shared_ptr<std::map<std::string, std::shared_ptr<Session>>> info::sessions = nullptr;
 
-  void init_server_info(){
+  void init_server_info() {
     info::locks = std::make_shared<std::map<std::string, std::shared_ptr<Lock>>>();
     info::sessions = std::make_shared<std::map<std::string, std::shared_ptr<Session>>>();
 
@@ -184,22 +181,22 @@ namespace app::server {
     }
 
     // Find leader
-    if(State::config->flag.leader){
+    if (State::config->flag.leader) {
       // We are leader, used mainly for testing
-      if(State::config->flag.debug){
+      if (State::config->flag.debug) {
         std::cout << termcolor::yellow << "We are leader" << termcolor::reset << std::endl;
       }
       State::master = std::make_shared<std::string>(selfAddress.toString());
-    }else{
+    } else {
       // Run Paxos to find master
       State::master = std::make_shared<std::string>("");
     }
   }
 
-  grpc::Status create_session(std::string client_id){
+  grpc::Status create_session(std::string client_id) {
     // Check if we already have a session with the client
-    if(info::sessions->find(client_id) != info::sessions->end()){
-      if(State::config->flag.debug){
+    if (info::sessions->find(client_id) != info::sessions->end()) {
+      if (State::config->flag.debug) {
         std::cout << termcolor::yellow << "Client with id " << client_id << " already has a session that hasn't yet been terminated." << termcolor::reset << std::endl;
       }
       return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
@@ -233,31 +230,29 @@ namespace app::server {
     return Status::OK;
   }
 
-  void maintain_session(std::shared_ptr<Session> session){
-    if(State::config->flag.debug){
-      std::cout << termcolor::cyan << "Maintaining the following session:" << endl << termcolor::grey
-        << "client_id: " << session->client_id << endl
-        << "start time: " << chrono::system_clock::to_time_t(session->start_time) << endl
-        << "lease length: " << session->lease_length.count() << "ms" << termcolor::reset << endl;
+  void maintain_session(std::shared_ptr<Session> session) {
+    if (State::config->flag.debug) {
+      std::cout << termcolor::cyan << "Maintaining the following session:" << endl
+                << termcolor::grey
+                << "client_id: " << session->client_id << endl
+                << "start time: " << chrono::system_clock::to_time_t(session->start_time) << endl
+                << "lease length: " << session->lease_length.count() << "ms" << termcolor::reset << endl;
     }
-
   }
 
-} // namespace app::server
-
+}  // namespace app::server
 
 namespace app::client {
   std::string info::session_id;
-  std::thread info::session;              
-  chrono::system_clock::time_point info::lease_start;                   
-  chrono::milliseconds info::lease_length;                    
-  std::shared_ptr<map<std::string, LockStatus>> info::locks; 
-  bool info::jeopardy;                           
+  std::thread info::session;
+  chrono::system_clock::time_point info::lease_start;
+  chrono::milliseconds info::lease_length;
+  std::shared_ptr<map<std::string, LockStatus>> info::locks;
+  bool info::jeopardy;
   bool info::expired;
   std::shared_ptr<Node> info::master;
 
-
-  grpc::Status start_session(){
+  grpc::Status start_session() {
     using namespace std::chrono;
 
     // Session ID is simply the client's ip:port, acting as a simple uniquifier
@@ -269,14 +264,14 @@ namespace app::client {
     info::master = nullptr;
 
     // Lease start is in seconds since epoch
-    info::lease_start =  system_clock::now();
+    info::lease_start = system_clock::now();
 
     // Try to establish session with all nodes in cluster
     for (const auto& [key, node] : *(State::memberList)) {
       grpc::Status status = node->endpoint.init_session(info::session_id);
 
-      if(!status.ok()){ // If server is down or replies with grpc::StatusCode::ABORTED
-        if(State::config->flag.debug){
+      if (!status.ok()) {  // If server is down or replies with grpc::StatusCode::ABORTED
+        if (State::config->flag.debug) {
           cout << termcolor::grey << "Node " << key << " replied with an error." << termcolor::reset << endl;
           continue;
         }
@@ -287,8 +282,8 @@ namespace app::client {
       break;
     }
 
-    if(info::master == nullptr){
-      if(State::config->flag.debug){
+    if (info::master == nullptr) {
+      if (State::config->flag.debug) {
         cout << termcolor::red << "Could not establish a session with any server." << termcolor::reset << endl;
       }
       return Status::CANCELLED;
@@ -296,4 +291,4 @@ namespace app::client {
 
     return Status::OK;
   }
-} // namespace app::client
+}  // namespace app::client

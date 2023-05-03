@@ -1,7 +1,7 @@
 #pragma once
 
-#include "./library.h"
-#include "./rpc.h"
+#include "library.h"
+#include "rpc.h"
 
 namespace app {
   enum Service {

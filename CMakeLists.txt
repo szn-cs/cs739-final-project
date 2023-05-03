@@ -44,6 +44,7 @@ set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
 #-------------------------------------------
 
 # includes ----------------------------
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include) # include headers - simplifies C++ include statements;  TODO: expose client header functions once build moves to a library, rather than an executable
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_interface.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_app.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_test.cmake)
