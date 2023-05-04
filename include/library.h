@@ -45,7 +45,7 @@
 
 #include "VariadicTable.h"  // https://github.com/friedmud/variadic_table
 #include "interface.grpc.pb.h"
-#include "nuraft.hxx"
+#include "libnuraft/nuraft.hxx"
 
 using namespace std;
 using namespace grpc;

@@ -4,20 +4,22 @@
 build() {
   source ./script/setenv.sh
 
-  build_NuRaft_dependency
-
   # create make files &
   # build through `cmake`  or use `make -w -C ./target/config/`
-  cmake -S . -B ./target/config && cmake --build ./target/config --parallel # --verbose
-  ## move binaries from nested builds
-  mkdir -p ./target/
-  # copy binaries
-  cp ./target/config/app ./target/
-  cp ./target/config/test ./target/
-  cp ./config/*.ini ./target/
+  cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B ./target/config
+  # # NOTE: don't use `` it breaks the build !
+  cmake --build ./target/config --parallel # --verbose
+  # ## move binaries from nested builds
+  # mkdir -p ./target/
+  # # copy binaries
+  # cp ./target/config/app ./target/
+  # cp ./target/config/test ./target/
+  # cp ./config/*.ini ./target/
 }
 
 build_NuRaft_dependency() {
+  ### NOTE: NOT needed anymore as the cmake called from within the main cmake of the project
+
   PKG=./dependency/NuRaft
 
   pushd $PKG
@@ -26,7 +28,7 @@ build_NuRaft_dependency() {
     mkdir build
     pushd build
     {
-      cmake ../
+      cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ../
       make
     }
     popd

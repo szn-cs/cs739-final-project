@@ -4,6 +4,8 @@
     "grpc", 
     "termcolor",
     "benchmark", 
-    "boost"
+    "boost", 
+    "asio", 
+    "openssl"
   ]
 }

@@ -15,51 +15,75 @@ See the License for the specific language governing permissions and
 limitations under the License.
 **************************************************************************/
 
-#include "echo_state_machine.hxx"
-#include "in_memory_state_mgr.hxx"
+#include <bits/stdc++.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <math.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-#include "libnuraft/nuraft.hxx"
-
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <future>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <map>
+#include <memory>
+#include <random>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <thread>
+#include <vector>
+
+#include "echo_state_machine.hxx"
+#include "in_memory_state_mgr.hxx"
+#include "libnuraft/nuraft.hxx"
 
 using namespace nuraft;
 
 int main(int argc, char** argv) {
-    // Replace with your logger, state machine, and state manager.
-    ptr<logger>         my_logger = nullptr;
-    ptr<state_machine>  my_state_machine = cs_new<echo_state_machine>();
-    ptr<state_mgr>      my_state_manager =
-        cs_new<inmem_state_mgr>(1, "localhost:12345");
+  // Replace with your logger, state machine, and state manager.
+  ptr<logger> my_logger = nullptr;
+  ptr<state_machine> my_state_machine = cs_new<echo_state_machine>();
+  ptr<state_mgr> my_state_manager = cs_new<inmem_state_mgr>(1, "localhost:12345");
 
-    asio_service::options   asio_opt;   // your Asio options
-    raft_params             params;     // your Raft parameters
+  asio_service::options asio_opt;  // your Asio options
+  raft_params params;              // your Raft parameters
 
-    // Initialize Raft server listening on port 12345.
-    // It will organize a single-node Raft cluster.
-    raft_launcher       launcher;
-    int                 port_number = 12345;
-    ptr<raft_server>    server = launcher.init(my_state_machine,
-                                               my_state_manager,
-                                               my_logger,
-                                               port_number,
-                                               asio_opt,
-                                               params);
-    // Need to wait for initialization.
-    while (!server->is_initialized()) {
-        std::this_thread::sleep_for( std::chrono::milliseconds(100) );
-    }
+  // Initialize Raft server listening on port 12345.
+  // It will organize a single-node Raft cluster.
+  raft_launcher launcher;
+  int port_number = 12345;
+  ptr<raft_server> server = launcher.init(
+      my_state_machine,
+      my_state_manager,
+      my_logger,
+      port_number,
+      asio_opt,
+      params);
+  // Need to wait for initialization.
+  while (!server->is_initialized()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 
-    // Append a log, containing a string `hello world` and its 4-byte length.
-    std::string msg = "hello world";
-    ptr<buffer> log = buffer::alloc(sizeof(int) + msg.size());
-    buffer_serializer bs_log(log);
-    bs_log.put_str(msg);
-    server->append_entries({log});
+  // Append a log, containing a string `hello world` and its 4-byte length.
+  std::string msg = "hello world";
+  ptr<buffer> log = buffer::alloc(sizeof(int) + msg.size());
+  buffer_serializer bs_log(log);
+  bs_log.put_str(msg);
+  server->append_entries({log});
 
-    // Shutdown.
-    launcher.shutdown();
-    return 0;
+  // Shutdown.
+  launcher.shutdown();
+  return 0;
 }
-

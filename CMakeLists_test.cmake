@@ -18,9 +18,9 @@ add_executable(${SERVER_BINARY_NAME}
 target_link_libraries(${SERVER_BINARY_NAME} 
   ${_REFLECTION} 
   ${_GRPC_GRPCPP} 
+  gRPC::gpr gRPC::grpc gRPC::grpc++ gRPC::grpc++_alts
   ${_PROTOBUF_LIBPROTOBUF} 
   stdc++fs
-  # gRPC::gpr gRPC::grpc gRPC::grpc++ gRPC::grpc++_alts
 
   ### Boost package
   ${Boost_LIBRARIES}
@@ -37,7 +37,7 @@ target_link_libraries(${SERVER_BINARY_NAME}
   benchmark::benchmark benchmark::benchmark_main
 )
 
-target_compile_options(${SERVER_BINARY_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++20 -Wall -O0 -D_FILE_OFFSET_BITS=64 -Wextra -Wzero-as-null-pointer-constant -Wextra -Wno-unused -Wno-unused-parameter>)
+target_compile_options(${SERVER_BINARY_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++20 -fPIC -pthread -fuse-ld=gold -Wall -O0 -D_FILE_OFFSET_BITS=64 -Wextra -Wzero-as-null-pointer-constant -Wextra -Wno-unused -Wno-unused-parameter>)
 
 # optimized: 
 # target_compile_options(${SERVER_BINARY_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++20 -Wall -g -O3 -D_FILE_OFFSET_BITS=64 -Wextra -Wzero-as-null-pointer-constant -Wextra -Wno-unused -Wno-unused-parameter>)

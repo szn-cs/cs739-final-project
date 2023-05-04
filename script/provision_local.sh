@@ -58,11 +58,13 @@ popd
 ./dependency/vcpkg/vcpkg install --debug
 
 function cmake() {
+  echo ""
   # install latest CMake
   # https://askubuntu.com/questions/355565/how-do-i-install-the-latest-version-of-cmake-from-the-command-line
 }
 
 function fedora() {
+  echo ""
   ## Fedora gcc installation
   # dnf groupinstall 'Development Tools'
   # yum install gcc-c++
