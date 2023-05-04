@@ -1,4 +1,5 @@
 #pragma once
+
 #include "library.h"
 #include "rpc.h"
 #include "utility.h"
@@ -59,13 +60,13 @@ namespace app::server {
   grpc::Status create_session(std::string);
   void maintain_session(std::shared_ptr<Session>);
   void end_session(std::shared_ptr<Session>);
-  int64_t attempt_extend_session(std::string); // TODO: Make a version that takes a map of locks, for when in jeopardy
+  int64_t attempt_extend_session(std::string);  // TODO: Make a version that takes a map of locks, for when in jeopardy
 }  // namespace app::server
 
 namespace app::client {
   // Information about the client
   struct info {
-    static std::string session_id;                                    // Will be equal to the client's ip:port string for simplicity
+    static std::string session_id;  // Will be equal to the client's ip:port string for simplicity
     // static std::thread session;                                       // The thread in which the session is managed
     static chrono::system_clock::time_point lease_start;              // The start time of the local lease
     static chrono::milliseconds lease_length;                         // Time remaining on the local lease

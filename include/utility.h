@@ -32,7 +32,8 @@ namespace utility::parse {
   enum Mode {
     APP = 0,
     TEST = 1,
-    BENCHMARK = 2
+    BENCHMARK = 2,
+    CONSENSUS = 3
   };
 
   /// @brief Address type that contains an address and port.

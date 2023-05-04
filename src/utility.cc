@@ -76,6 +76,8 @@ namespace utility::parse {
       m = Mode::TEST;
     else if (token == "2")
       m = Mode::BENCHMARK;
+    else if (token == "3")
+      m = Mode::CONSENSUS;
     else
       in.setstate(std::ios_base::failbit);
     return in;
@@ -111,6 +113,7 @@ namespace utility::parse {
     EnumOption<Mode>::param_map["app"] = utility::parse::Mode::APP;
     EnumOption<Mode>::param_map["test"] = utility::parse::Mode::TEST;
     EnumOption<Mode>::param_map["benchmark"] = utility::parse::Mode::BENCHMARK;
+    EnumOption<Mode>::param_map["consensus"] = utility::parse::Mode::CONSENSUS;
 
     std::filesystem::path executablePath;
     {

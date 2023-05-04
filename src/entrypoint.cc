@@ -38,7 +38,36 @@ int main(int argc, char* argv[]) {
     t.join();
   };
 
+  auto m_consensus = [&argc, &argv, &variables, &config]() {
+    /*
+    using namespace consensus;
+    if (argc < 3) calc_usage(argc, argv);
+
+    set_server_info(argc, argv);
+    check_additional_flags(argc, argv);
+
+    std::cout << "    -- Replicated Calculator with Raft --" << std::endl;
+    std::cout << "                         Version 0.1.0" << std::endl;
+    std::cout << "    Server ID:    " << stuff.server_id_ << std::endl;
+    std::cout << "    Endpoint:     " << stuff.endpoint_ << std::endl;
+    if (CALL_TYPE == raft_params::async_handler) {
+      std::cout << "    async handler is enabled" << std::endl;
+    }
+    if (ASYNC_SNAPSHOT_CREATION) {
+      std::cout << "    snapshots are created asynchronously" << std::endl;
+    }
+    init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION));
+    loop();
+
+    return 0;
+    */
+  };
+
   switch (config->mode) {
+    case utility::parse::Mode::CONSENSUS:
+      m_consensus();
+      break;
+
     case utility::parse::Mode::APP:
     default:
       m_app();

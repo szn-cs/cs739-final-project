@@ -9,6 +9,7 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <math.h>
 #include <signal.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>

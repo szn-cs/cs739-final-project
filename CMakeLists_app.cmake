@@ -6,7 +6,7 @@ set(SERVER_SRC
   ${SOURCE_FOLDER}/entrypoint.cc
   ${SOURCE_FOLDER}/app.cc
   ${SOURCE_FOLDER}/utility.cc
-  ${SOURCE_FOLDER}/in_memory_log_store.cc
+  # ${SOURCE_FOLDER}/consensus.cc
 )
 
 include(CheckFunctionExists)

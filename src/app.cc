@@ -89,7 +89,6 @@ namespace rpc {
     return Status::OK;
   }
 
-
   std::pair<grpc::Status, int64_t> Endpoint::keep_alive(std::string client_id, chrono::system_clock::time_point deadline) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
@@ -111,7 +110,6 @@ namespace rpc {
 
     return res;
   }
-
 
   std::pair<grpc::Status, int64_t> Endpoint::keep_alive(std::string client_id, std::map<std::string, LockStatus> locks, chrono::system_clock::time_point deadline) {
     if (app::State::config->flag.debug) {
@@ -244,17 +242,17 @@ namespace app::server {
     int in = 1;
     in >> *(session->block_reply);
 
-    while(true){
+    while (true) {
       chrono::system_clock::time_point lease_expires = session->start_time + session->lease_length;
       chrono::system_clock::duration time_until_expire = chrono::nanoseconds(0);
 
       // Check if we are now within a second of expiration
-      if(lease_expires > chrono::system_clock::now()){
+      if (lease_expires > chrono::system_clock::now()) {
         time_until_expire = lease_expires - std::chrono::system_clock::now();
       }
 
       // Session timed out
-      if(time_until_expire == chrono::nanoseconds(0)){
+      if (time_until_expire == chrono::nanoseconds(0)) {
         if (State::config->flag.debug) {
           std::cout << termcolor::yellow << "Lease with client " << session->client_id << " is expired (i.e. session maitenence thread dies)." << termcolor::reset << std::endl;
         }
@@ -265,7 +263,7 @@ namespace app::server {
       }
 
       // Ready to reply to client
-      if(time_until_expire <= chrono::seconds(1)){
+      if (time_until_expire <= chrono::seconds(1)) {
         if (State::config->flag.debug) {
           std::cout << termcolor::grey << "Triggering keep_alive response to " << session->client_id << "." << termcolor::reset << std::endl;
         }
@@ -274,20 +272,18 @@ namespace app::server {
       // Run the loop every second, a granularity that should suffice
       std::this_thread::sleep_for(chrono::seconds(1));
     }
-
   }
 
-  void end_session(std::shared_ptr<Session> session){
+  void end_session(std::shared_ptr<Session> session) {
     session->terminated = true;
-    
+
     // Release all locks
-    for(auto& [key, lock] : *(session->locks)){
+    for (auto& [key, lock] : *(session->locks)) {
       // TODO:: Implement
     }
   }
 
-
-  int64_t attempt_extend_session(std::string client_id){
+  int64_t attempt_extend_session(std::string client_id) {
     std::shared_ptr<Session> session = info::sessions->at(client_id);
 
     // Will block until the session manager indicates it is time to send a reply
@@ -295,7 +291,7 @@ namespace app::server {
     i << *(session->block_reply);
 
     // Set the correct lease length
-    if(!session->terminated){
+    if (!session->terminated) {
       if (State::config->flag.debug) {
         std::cout << termcolor::grey << "Extending lease for client " << session->client_id << "." << termcolor::reset << std::endl;
       }
@@ -353,7 +349,7 @@ namespace app::client {
       }
       return Status::CANCELLED;
     }
-    
+
     // Thread to handle maintaining the session (i.e. issuing keep_alives and such)
     std::thread t(maintain_session);
     t.detach();
@@ -361,29 +357,29 @@ namespace app::client {
     return Status::OK;
   }
 
-  void maintain_session(){
+  void maintain_session() {
     if (State::config->flag.debug) {
       cout << termcolor::yellow << "Beginning session maitenence." << termcolor::reset << endl;
     }
 
     // Shouldn't ever happen
-    if(info::master == nullptr){
+    if (info::master == nullptr) {
       return;
-    }    
+    }
 
-    while(true){
+    while (true) {
       // Wait until response or the deadline is reached
       chrono::system_clock::time_point deadline = info::lease_start + info::lease_length;
       std::pair<grpc::Status, int64_t> r = info::master->endpoint.keep_alive(info::session_id, deadline);
       auto [status, new_lease_length] = r;
 
       // If we successfully heard back from server before deadline
-      if(status.ok()){
+      if (status.ok()) {
         if (State::config->flag.debug) {
           cout << termcolor::grey << "keep_alive response received. Lease extended." << termcolor::reset << endl;
         }
         info::lease_length = chrono::milliseconds(new_lease_length);
-      }else{
+      } else {
         if (State::config->flag.debug) {
           cout << termcolor::red << "Entering jeopardy." << termcolor::reset << endl;
         }
