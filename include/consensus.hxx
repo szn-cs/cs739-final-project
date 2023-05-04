@@ -473,6 +473,7 @@ namespace nuraft {
    \____\___/|_| \_|____/|_____|_| \_|____/ \___/|____/  |___|_| \_|___| |_| |___/_/   \_\_____|___/____/_/   \_\_| |___\___/|_| \_|
 */
 
+/*
 using namespace nuraft;
 
 using raft_result = cmd_result<ptr<buffer>>;
@@ -688,3 +689,5 @@ void set_server_info(int argc, char** argv) {
   stuff.addr_ = str.substr(0, pos);
   stuff.endpoint_ = stuff.addr_ + ":" + std::to_string(stuff.port_);
 }
+
+*/

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "app.h"
-// #include "consensus.hxx" // TODO:integrate
+#include "consensus.hxx"
 #include "library.h"
 #include "rpc.h"
 #include "utility.h"

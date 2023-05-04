@@ -9,6 +9,7 @@
 */
 
 namespace consensus {
+  /*
   using namespace nuraft;
 
   static raft_params::return_method_type CALL_TYPE = raft_params::blocking;
@@ -204,6 +205,8 @@ namespace consensus {
     std::cout << ss.str();
     exit(0);
   }
+
+*/
 
 };  // namespace consensus
 
