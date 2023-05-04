@@ -473,221 +473,142 @@ namespace nuraft {
    \____\___/|_| \_|____/|_____|_| \_|____/ \___/|____/  |___|_| \_|___| |_| |___/_/   \_\_____|___/____/_/   \_\_| |___\___/|_| \_|
 */
 
-/*
-using namespace nuraft;
+// === Timer things ====================================
 
-using raft_result = cmd_result<ptr<buffer>>;
-
-struct server_stuff {
-  server_stuff()
-      : server_id_(1), addr_("localhost"), port_(25000), raft_logger_(nullptr), sm_(nullptr), smgr_(nullptr), raft_instance_(nullptr) {}
-
-  void reset() {
-    raft_logger_.reset();
-    sm_.reset();
-    smgr_.reset();
-    raft_instance_.reset();
-  }
-
-  // Server ID.
-  int server_id_;
-
-  // Server address.
-  std::string addr_;
-
-  // Server port.
-  int port_;
-
-  // Endpoint: `<addr>:<port>`.
-  std::string endpoint_;
-
-  // Logger.
-  ptr<logger> raft_logger_;
-
-  // State machine.
-  ptr<state_machine> sm_;
-
-  // State manager.
-  ptr<state_mgr> smgr_;
-
-  // Raft launcher.
-  raft_launcher launcher_;
-
-  // Raft server instance.
-  ptr<raft_server> raft_instance_;
-};
-static server_stuff stuff;
-
-void add_server(const std::string& cmd, const std::vector<std::string>& tokens) {
-  if (tokens.size() < 3) {
-    std::cout << "too few arguments" << std::endl;
-    return;
-  }
-
-  int server_id_to_add = atoi(tokens[1].c_str());
-  if (!server_id_to_add || server_id_to_add == stuff.server_id_) {
-    std::cout << "wrong server id: " << server_id_to_add << std::endl;
-    return;
-  }
-
-  std::string endpoint_to_add = tokens[2];
-  srv_config srv_conf_to_add(server_id_to_add, endpoint_to_add);
-  ptr<raft_result> ret = stuff.raft_instance_->add_srv(srv_conf_to_add);
-  if (!ret->get_accepted()) {
-    std::cout << "failed to add server: " << ret->get_result_code() << std::endl;
-    return;
-  }
-  std::cout << "async request is in progress (check with `list` command)" << std::endl;
-}
-
-void server_list(const std::string& cmd, const std::vector<std::string>& tokens) {
-  std::vector<ptr<srv_config>> configs;
-  stuff.raft_instance_->get_srv_config_all(configs);
-
-  int leader_id = stuff.raft_instance_->get_leader();
-
-  for (auto& entry : configs) {
-    ptr<srv_config>& srv = entry;
-    std::cout << "server id " << srv->get_id() << ": " << srv->get_endpoint();
-    if (srv->get_id() == leader_id) {
-      std::cout << " (LEADER)";
+namespace consensus::TestSuite {
+  class Timer {
+   public:
+    Timer() : duration_ms(0) {
+      reset();
     }
-    std::cout << std::endl;
-  }
-}
-
-bool do_cmd(const std::vector<std::string>& tokens);
-
-std::vector<std::string> tokenize(const char* str, char c = ' ') {
-  std::vector<std::string> tokens;
-  do {
-    const char* begin = str;
-    while (*str != c && *str)
-      str++;
-    if (begin != str) tokens.push_back(std::string(begin, str));
-  } while (0 != *str++);
-
-  return tokens;
-}
-
-void loop() {
-  char cmd[1000];
-  std::string prompt = "calc " + std::to_string(stuff.server_id_) + "> ";
-  while (true) {
-#if defined(__linux__) || defined(__APPLE__)
-    std::cout << _CLM_GREEN << prompt << _CLM_END;
-#else
-    std::cout << prompt;
-#endif
-    if (!std::cin.getline(cmd, 1000)) {
-      break;
+    Timer(size_t _duration_ms) : duration_ms(_duration_ms) {
+      reset();
+    }
+    inline bool timeout() { return timeover(); }
+    bool timeover() {
+      auto cur = std::chrono::system_clock::now();
+      std::chrono::duration<double> elapsed = cur - start;
+      if (duration_ms < elapsed.count() * 1000) return true;
+      return false;
+    }
+    uint64_t getTimeSec() {
+      auto cur = std::chrono::system_clock::now();
+      std::chrono::duration<double> elapsed = cur - start;
+      return (uint64_t)(elapsed.count());
+    }
+    uint64_t getTimeMs() {
+      auto cur = std::chrono::system_clock::now();
+      std::chrono::duration<double> elapsed = cur - start;
+      return (uint64_t)(elapsed.count() * 1000);
+    }
+    uint64_t getTimeUs() {
+      auto cur = std::chrono::system_clock::now();
+      std::chrono::duration<double> elapsed = cur - start;
+      return (uint64_t)(elapsed.count() * 1000000);
+    }
+    void reset() {
+      start = std::chrono::system_clock::now();
+    }
+    void resetSec(size_t _duration_sec) {
+      duration_ms = _duration_sec * 1000;
+      reset();
+    }
+    void resetMs(size_t _duration_ms) {
+      duration_ms = _duration_ms;
+      reset();
     }
 
-    std::vector<std::string> tokens = tokenize(cmd);
-    bool cont = do_cmd(tokens);
-    if (!cont) break;
-  }
-}
-
-void init_raft(ptr<state_machine> sm_instance) {
-  // Logger.
-  std::string log_file_name = "./srv" + std::to_string(stuff.server_id_) + ".log";
-  ptr<logger_wrapper> log_wrap = cs_new<logger_wrapper>(log_file_name, 4);
-  stuff.raft_logger_ = log_wrap;
-
-  // State machine.
-  stuff.smgr_ = cs_new<inmem_state_mgr>(stuff.server_id_, stuff.endpoint_);
-  // State manager.
-  stuff.sm_ = sm_instance;
-
-  // ASIO options.
-  asio_service::options asio_opt;
-  asio_opt.thread_pool_size_ = 4;
-
-  // Raft parameters.
-  raft_params params;
-  // heartbeat: 100 ms, election timeout: 200 - 400 ms.
-  params.heart_beat_interval_ = 100;
-  params.election_timeout_lower_bound_ = 200;
-  params.election_timeout_upper_bound_ = 400;
-  // Upto 5 logs will be preserved ahead the last snapshot.
-  params.reserved_log_items_ = 5;
-  // Snapshot will be created for every 5 log appends.
-  params.snapshot_distance_ = 5;
-  // Client timeout: 3000 ms.
-  params.client_req_timeout_ = 3000;
-  // According to this method, `append_log` function
-  // should be handled differently.
-  params.return_method_ = CALL_TYPE;
-
-  // Initialize Raft server.
-  stuff.raft_instance_ = stuff.launcher_.init(
-      stuff.sm_,
-      stuff.smgr_,
-      stuff.raft_logger_,
-      stuff.port_,
-      asio_opt,
-      params);
-  if (!stuff.raft_instance_) {
-    std::cerr << "Failed to initialize launcher (see the message "
-                 "in the log file)."
-              << std::endl;
-    log_wrap.reset();
-    exit(-1);
-  }
-
-  // Wait until Raft server is ready (upto 5 seconds).
-  const size_t MAX_TRY = 20;
-  std::cout << "init Raft instance ";
-  for (size_t ii = 0; ii < MAX_TRY; ++ii) {
-    if (stuff.raft_instance_->is_initialized()) {
-      std::cout << " done" << std::endl;
-      return;
+    static std::string usToString(uint64_t us) {
+      std::stringstream ss;
+      if (us < 1000) {
+        // us
+        ss << std::fixed << std::setprecision(0) << us << " us";
+      } else if (us < 1000000) {
+        // ms
+        double tmp = static_cast<double>(us / 1000.0);
+        ss << std::fixed << std::setprecision(1) << tmp << " ms";
+      } else if (us < (uint64_t)600 * 1000000) {
+        // second: 1 s -- 600 s (10 mins)
+        double tmp = static_cast<double>(us / 1000000.0);
+        ss << std::fixed << std::setprecision(1) << tmp << " s";
+      } else {
+        // minute
+        double tmp = static_cast<double>(us / 60.0 / 1000000.0);
+        ss << std::fixed << std::setprecision(0) << tmp << " m";
+      }
+      return ss.str();
     }
-    std::cout << ".";
-    fflush(stdout);
-    TestSuite::sleep_ms(250);
-  }
-  std::cout << " FAILED" << std::endl;
-  log_wrap.reset();
-  exit(-1);
-}
 
-void usage(int argc, char** argv) {
-  std::stringstream ss;
-  ss << "Usage: \n";
-  ss << "    " << argv[0] << " <server id> <IP address and port>";
-  ss << std::endl;
+   private:
+    std::chrono::time_point<std::chrono::system_clock> start;
+    size_t duration_ms;
+  };  // namespace Timer
 
-  std::cout << ss.str();
-  exit(0);
-}
+}  // namespace consensus::TestSuite
 
-void set_server_info(int argc, char** argv) {
-  // Get server ID.
-  stuff.server_id_ = atoi(argv[1]);
-  if (stuff.server_id_ < 1) {
-    std::cerr << "wrong server id (should be >= 1): " << stuff.server_id_
-              << std::endl;
-    usage(argc, argv);
-  }
+namespace consensus {
+  using namespace nuraft;
 
-  // Get server address and port.
-  std::string str = argv[2];
-  size_t pos = str.rfind(":");
-  if (pos == std::string::npos) {
-    std::cerr << "wrong endpoint: " << str << std::endl;
-    usage(argc, argv);
-  }
+  static raft_params::return_method_type CALL_TYPE = raft_params::blocking;
+  //  = raft_params::async_handler;
 
-  stuff.port_ = atoi(str.substr(pos + 1).c_str());
-  if (stuff.port_ < 1000) {
-    std::cerr << "wrong port (should be >= 1000): " << stuff.port_ << std::endl;
-    usage(argc, argv);
-  }
+  static bool ASYNC_SNAPSHOT_CREATION = false;
 
-  stuff.addr_ = str.substr(0, pos);
-  stuff.endpoint_ = stuff.addr_ + ":" + std::to_string(stuff.port_);
-}
+  using raft_result = cmd_result<ptr<buffer>>;
 
-*/
+  struct server_stuff {
+    server_stuff()
+        : server_id_(1), addr_("localhost"), port_(25000), raft_logger_(nullptr), sm_(nullptr), smgr_(nullptr), raft_instance_(nullptr) {}
+
+    void reset() {
+      raft_logger_.reset();
+      sm_.reset();
+      smgr_.reset();
+      raft_instance_.reset();
+    }
+
+    // Server ID.
+    int server_id_;
+
+    // Server address.
+    std::string addr_;
+
+    // Server port.
+    int port_;
+
+    // Endpoint: `<addr>:<port>`.
+    std::string endpoint_;
+
+    // Logger.
+    ptr<logger> raft_logger_;
+
+    // State machine.
+    ptr<state_machine> sm_;
+
+    // State manager.
+    ptr<state_mgr> smgr_;
+
+    // Raft launcher.
+    raft_launcher launcher_;
+
+    // Raft server instance.
+    ptr<raft_server> raft_instance_;
+  };
+  static server_stuff stuff;
+
+  void check_additional_flags(int argc, char** argv);
+  void calc_usage(int argc, char** argv);  // print usage information
+  void usage(int argc, char** argv);
+  void set_server_info(int argc, char** argv);
+  void init_raft(ptr<state_machine> sm_instance);
+  void loop();
+  void handle_result(ptr<TestSuite::Timer> timer, raft_result& result, ptr<std::exception>& err);
+  void append_log(const std::string& cmd, const std::vector<std::string>& tokens);
+  void print_status(const std::string& cmd, const std::vector<std::string>& tokens);
+  bool do_cmd(const std::vector<std::string>& tokens);
+  void help(const std::string& cmd, const std::vector<std::string>& tokens);
+  void add_server(const std::string& cmd, const std::vector<std::string>& tokens);
+  void server_list(const std::string& cmd, const std::vector<std::string>& tokens);
+  std::vector<std::string> tokenize(const char* str, char);
+
+}  // namespace consensus

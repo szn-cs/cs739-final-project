@@ -39,8 +39,8 @@ int main(int argc, char* argv[]) {
   };
 
   auto m_consensus = [&argc, &argv, &variables, &config]() {
-    /*
     using namespace consensus;
+
     if (argc < 3) calc_usage(argc, argv);
 
     set_server_info(argc, argv);
@@ -56,11 +56,11 @@ int main(int argc, char* argv[]) {
     if (ASYNC_SNAPSHOT_CREATION) {
       std::cout << "    snapshots are created asynchronously" << std::endl;
     }
+
     init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION));
     loop();
 
     return 0;
-    */
   };
 
   switch (config->mode) {
