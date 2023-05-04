@@ -9,10 +9,12 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <math.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include <algorithm>
+#include <atomic>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/asio.hpp>
@@ -22,6 +24,7 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
@@ -35,6 +38,7 @@
 #include <map>
 #include <memory>
 #include <msd/channel.hpp>
+#include <mutex>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -45,6 +49,9 @@
 
 #include "VariadicTable.h"  // https://github.com/friedmud/variadic_table
 #include "interface.grpc.pb.h"
+#include "libnuraft/event_awaiter.hxx"
+#include "libnuraft/internal_timer.hxx"
+#include "libnuraft/log_store.hxx"
 #include "libnuraft/nuraft.hxx"
 
 using namespace std;

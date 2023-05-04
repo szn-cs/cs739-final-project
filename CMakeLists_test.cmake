@@ -3,9 +3,10 @@ set(TEST_FOLDER "${PROJECT_SOURCE_DIR}/test")
 set(SERVER_BINARY_NAME test)
 
 set(SRC_FILES 
-${TEST_FOLDER}/test.cc
-${SOURCE_FOLDER}/app.cc
-${SOURCE_FOLDER}/utility.cc
+  ${TEST_FOLDER}/test.cc
+  ${SOURCE_FOLDER}/app.cc
+  ${SOURCE_FOLDER}/utility.cc
+  ${SOURCE_FOLDER}/in_memory_log_store.cc
 )
 
 include(CheckFunctionExists)
