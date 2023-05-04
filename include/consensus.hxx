@@ -609,6 +609,6 @@ namespace consensus {
   void help(const std::string& cmd, const std::vector<std::string>& tokens);
   void add_server(const std::string& cmd, const std::vector<std::string>& tokens);
   void server_list(const std::string& cmd, const std::vector<std::string>& tokens);
-  std::vector<std::string> tokenize(const char* str, char);
+  std::vector<std::string> tokenize(const char* str, char c = ' ');
 
 }  // namespace consensus

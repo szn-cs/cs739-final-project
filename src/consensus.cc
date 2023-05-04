@@ -301,16 +301,11 @@ namespace consensus {
     */
   }
 
-  void loop() {  // TODO:
-    /*
+  void loop() {
     char cmd[1000];
     std::string prompt = "calc " + std::to_string(stuff.server_id_) + "> ";
     while (true) {
-#if defined(__linux__) || defined(__APPLE__)
-      std::cout << _CLM_GREEN << prompt << _CLM_END;
-#else
-      std::cout << prompt;
-#endif
+      std::cout << green << prompt << reset;
       if (!std::cin.getline(cmd, 1000)) {
         break;
       }
@@ -319,7 +314,6 @@ namespace consensus {
       bool cont = do_cmd(tokens);
       if (!cont) break;
     }
-    */
   }
 
   void add_server(const std::string& cmd, const std::vector<std::string>& tokens) {
@@ -360,7 +354,7 @@ namespace consensus {
     }
   }
 
-  std::vector<std::string> tokenize(const char* str, char c = ' ') {
+  std::vector<std::string> tokenize(const char* str, char c) {
     std::vector<std::string> tokens;
     do {
       const char* begin = str;
