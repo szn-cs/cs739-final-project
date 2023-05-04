@@ -1,10 +1,9 @@
 #pragma once
 
-#include "./common.h"
-
-using namespace nuraft;
+#include "common.h"
 
 namespace calc_server {
+  using namespace nuraft;
 
   class calc_state_machine : public state_machine {
    public:

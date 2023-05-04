@@ -61,13 +61,3 @@ using grpc::ClientAsyncResponseReader, grpc::CompletionQueue, grpc::ServerAsyncR
 using grpc::Server, grpc::ServerBuilder, grpc::ServerContext, grpc::ServerReader, grpc::ServerWriter, grpc::Status;  // https://grpc.github.io/grpc/core/md_doc_statuscodes.html
 using termcolor::reset, termcolor::yellow, termcolor::red, termcolor::blue, termcolor::cyan, termcolor::grey, termcolor::magenta, termcolor::green;
 namespace fs = std::filesystem;
-
-// alias for shared pointer type
-template <typename T>
-using ptr = std::shared_ptr<T>;
-
-// alias for creating shared pointer
-template <typename T, typename... TArgs>
-inline ptr<T> ptr_new(TArgs&&... args) {
-  return std::make_shared<T>(std::forward<TArgs>(args)...);
-}
