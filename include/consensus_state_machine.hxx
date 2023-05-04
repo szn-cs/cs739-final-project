@@ -2,15 +2,15 @@
 
 #include "common.h"
 
-namespace calc_server {
+namespace consensus_server {
   using namespace nuraft;
 
-  class calc_state_machine : public state_machine {
+  class consensus_state_machine : public state_machine {
    public:
-    calc_state_machine(bool async_snapshot = false)
+    consensus_state_machine(bool async_snapshot = false)
         : cur_value_(0), last_committed_idx_(0), async_snapshot_(async_snapshot) {}
 
-    ~calc_state_machine() {}
+    ~consensus_state_machine() {}
 
     enum op_type : int {
       ADD = 0x0,
@@ -253,4 +253,4 @@ namespace calc_server {
     bool async_snapshot_;
   };
 
-};  // namespace calc_server
+};  // namespace consensus_server
