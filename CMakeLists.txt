@@ -12,6 +12,7 @@ set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
 
 #-------------------------------------------
 
+include_directories(${VCPKG_INSTALLED_DIR}/x64-linux/include/openssl)
 include_directories(${VCPKG_INSTALLED_DIR}/x64-linux/include)
 
 include_directories(${BOOST_INCLUDE_DIRS})
@@ -51,9 +52,7 @@ message("📚 nuraft inc: ${NURAFT_LIBRARY}")
 
 # #-------------------------------------------
 
-# # include(./config/PrintVariables.cmake) # log cmake variables (print debug information)
-# include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_interface.cmake)
-# include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_app.cmake)
-# include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_test.cmake)
-# include(${CMAKE_CURRENT_SOURCE_DIR}/examples/CMakeLists.txt)
-
+# include(./config/PrintVariables.cmake) # log cmake variables (print debug information)
+include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_interface.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_app.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists_test.cmake)

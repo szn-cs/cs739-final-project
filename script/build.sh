@@ -10,11 +10,11 @@ build() {
   # # NOTE: don't use `` it breaks the build !
   cmake --build ./target/config --parallel # --verbose
   # ## move binaries from nested builds
-  # mkdir -p ./target/
+  mkdir -p ./target/
   # # copy binaries
-  # cp ./target/config/app ./target/
-  # cp ./target/config/test ./target/
-  # cp ./config/*.ini ./target/
+  cp ./target/config/app ./target/
+  cp ./target/config/test ./target/
+  cp ./config/*.ini ./target/
 }
 
 build_NuRaft_dependency() {
