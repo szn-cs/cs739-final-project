@@ -235,7 +235,7 @@ namespace consensus {
     stuff.endpoint_ = stuff.addr_ + ":" + std::to_string(stuff.port_);
   }
 
-  void init_raft(ptr<state_machine> sm_instance) {  // TODO:
+  void init_raft(ptr<state_machine> sm_instance) {
     // Logger.
     std::string log_file_name = "./srv" + std::to_string(stuff.server_id_) + ".log";
     ptr<consensus::_logger::logger_wrapper> log_wrap = cs_new<consensus::_logger::logger_wrapper>(log_file_name, 4);

@@ -235,8 +235,6 @@ namespace utility::parse {
                     << endl;
         };
 
-      // TODO: ensure ip address is valid
-
     } catch (const po::error& ex) {
       std::cerr << red << ex.what() << reset << "\n\n";
       std::cout << "(Check options with --help flag.)\n"
