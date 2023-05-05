@@ -6,7 +6,23 @@ build() {
 
   # create make files &
   # build through `cmake`  or use `make -w -C ./target/config/`
-  cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -S . -B ./target/config
+  cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_BUILD_TYPE=Debug -S . -B ./target/config
+  # # NOTE: don't use `` it breaks the build !
+  cmake --build ./target/config --parallel # --verbose
+  # ## move binaries from nested builds
+  mkdir -p ./target/
+  # # copy binaries
+  cp ./target/config/app ./target/
+  cp ./target/config/test ./target/
+  cp ./config/*.ini ./target/
+}
+
+build_optimized() {
+  source ./script/setenv.sh
+
+  # create make files &
+  # build through `cmake`  or use `make -w -C ./target/config/`
+  cmake -D CMAKE_EXPORT_COMPILE_COMMANDS=ON -D CMAKE_BUILD_TYPE=Release -S . -B ./target/config
   # # NOTE: don't use `` it breaks the build !
   cmake --build ./target/config --parallel # --verbose
   # ## move binaries from nested builds
@@ -44,10 +60,6 @@ build_NuRaft_dependency() {
     ./runtests.sh
     popd
   }
-}
-
-build_optimized() {
-  echo "requires commenting out the appropriate lines in 'CMakeLists_app.cmake'"
 }
 
 ## clean

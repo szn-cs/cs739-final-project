@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 3.26)
 set(CMAKE_CXX_STANDARD 20)
+set(compile_flags_debug_variable $<$<COMPILE_LANGUAGE:CXX>:-std=c++20 -lssl -lz -lcrypto -ldl -lpthread -fPIC -pthread -fuse-ld=gold -O0 -Wall -g -D_FILE_OFFSET_BITS=64 -Wextra -Wno-zero-as-null-pointer-constant -Wno-unused -Wno-unused-parameter>)
+set(compile_flags_release_variable $<$<COMPILE_LANGUAGE:CXX>:-std=c++20 -lssl -lz -lcrypto -ldl -lpthread -fPIC -pthread -fuse-ld=gold -O3 -Wall -D_FILE_OFFSET_BITS=64 -Wextra -Wno-zero-as-null-pointer-constant -Wno-unused -Wno-unused-parameter>)
+message(STATUS "build type: '${CMAKE_BUILD_TYPE}'")
+message("Generated with config types: ${CMAKE_CONFIGURATION_TYPES}")
 
 set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/dependency/vcpkg/scripts/buildsystems/vcpkg.cmake" ## When using vcpkg as a submodule of your project, you can add the following to your CMakeLists.txt before the first project() call, instead of passing CMAKE_TOOLCHAIN_FILE to the cmake invocation. This will still allow people to not use vcpkg, by passing the CMAKE_TOOLCHAIN_FILE directly, but it will make the configure-build step slightly easier.
 CACHE STRING "Vcpkg toolchain file")
 
 project (distributed_project VERSION 1.0.0 LANGUAGES C CXX DESCRIPTION "distributed_project")
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/config/cmake;${CMAKE_MODULE_PATH}")
-set(CMAKE_BUILD_TYPE RelWithDebInfo) # debug
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/config/cmake;${CMAKE_MODULE_PATH}") # NOTE: must be defined after `project` call
 set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
 
 #-------------------------------------------
