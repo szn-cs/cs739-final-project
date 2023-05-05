@@ -4,14 +4,6 @@
 #include "rpc.h"
 #include "utility.h"
 
-/* 
-
-TODO: calc_server namespace → consensus namespace
-#include "logger_wrapper.hxx"
-#include "test_common.h"
-
-*/
-
 /*
    ___ _   _   __  __ _____ __  __  ___  ______   __  _     ___   ____   ____ _____ ___  ____  _____
   |_ _| \ | | |  \/  | ____|  \/  |/ _ \|  _ \ \ / / | |   / _ \ / ___| / ___|_   _/ _ \|  _ \| ____|
