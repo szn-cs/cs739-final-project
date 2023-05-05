@@ -6,13 +6,10 @@
 test() {
   ./target/app --help
   ./target/test --help
-
-  # terminal 1
-  {
+  { # terminal 1
     ./target/app
   }
-  # terminal 2
-  {
+  { # terminal 2
     ./target/test
   }
 }
@@ -43,7 +40,7 @@ test_example() {
 }
 
 test_rpc() {
-  ./target/app -g --port 8000 --port_database 9000 &
+  ./target/app -g --port 8000 &
   ./target/app -g --port 8000 &
   ./target/app -g --port 8001 &
   ./target/app -g --port 8002 &

@@ -34,7 +34,7 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/target/app",
-			"args": ["-g","--config","50_node_cluster.ini", "-m", "user", "--command", "test_non_leader_db"],
+			"args": ["-g","--config","50_node_cluster.ini", "-m", "consensus", "something"],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],

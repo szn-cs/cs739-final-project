@@ -106,7 +106,7 @@ namespace utility::parse {
   }
 
   template <>
-  std::function<void()> parse_options<Mode::APP>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  std::function<void()> parse_options<Mode::APP>(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
 
@@ -191,7 +191,7 @@ namespace utility::parse {
   }
 
   template <>
-  std::function<void()> parse_options<Mode::TEST>(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  std::function<void()> parse_options<Mode::TEST>(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
 
@@ -244,6 +244,28 @@ namespace utility::parse {
     }
 
     return nullptr;
+  }
+
+  void remove_command_argument(int& argc, char**& argv, const std::shared_ptr<utility::parse::Config>& config, boost::program_options::variables_map& variables, std::vector<std::string>& args, std::vector<char*>& new_argv) {
+    // QUICK FIX - erase mode option from argv
+    if (variables.count("mode")) {
+      variables.erase("mode");
+
+      for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i] == "-m" || args[i] == "--mode") {
+          args.erase(args.begin() + i + 1);
+          args.erase(args.begin() + i);
+          argc = argc - 2;
+          break;
+        }
+      }
+
+      for (const auto& arg : args)
+        new_argv.push_back((char*)arg.data());
+      new_argv.push_back(nullptr);
+
+      argv = new_argv.data();
+    }
   }
 
 }  // namespace utility::parse

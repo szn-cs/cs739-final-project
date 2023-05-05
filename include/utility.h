@@ -154,8 +154,9 @@ namespace utility::parse {
      *
     */
   template <Mode mode>
-  std::function<void()> parse_options(int argc, char** argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables);
-
+  std::function<void()> parse_options(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables);
+  // quick fix to consume arguments and remove them to prevent conflicts with other tools
+  void remove_command_argument(int& argc, char**& argv, const std::shared_ptr<utility::parse::Config>& config, boost::program_options::variables_map& variables, std::vector<std::string>& args, std::vector<char*>& new_argv);
 }  // namespace utility::parse
 
 namespace utility::server {

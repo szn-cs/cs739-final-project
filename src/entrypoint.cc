@@ -7,9 +7,12 @@ int main(int argc, char* argv[]) {
   cout << termcolor::grey << utility::getClockTime() << termcolor::reset << endl;
   boost::program_options::variables_map variables;
   std::shared_ptr<utility::parse::Config> config = std::make_shared<utility::parse::Config>();
+  std::vector<std::string> args(argv, argv + argc);
+  std::vector<char*> new_argv;
 
   // parse options from different sources
   auto f = utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
+  remove_command_argument(argc, argv, config, variables, args, new_argv);
   if (f) {
     f();  // print help info
     exit(0);
