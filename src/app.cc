@@ -7,7 +7,7 @@ namespace rpc {
     if (app::State::config->flag.debug) {
       const std::string className = "RPC";
       const string n = className + "::" + __func__;
-      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
     return Status::OK;
@@ -17,7 +17,7 @@ namespace rpc {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
-      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
     ClientContext context;
@@ -37,7 +37,7 @@ namespace rpc {
     if (app::State::config->flag.debug) {
       const std::string className = "RPC";
       const string n = className + "::" + __func__;
-      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
     if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0) {
@@ -50,7 +50,7 @@ namespace rpc {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
-      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
     ClientContext context;
@@ -71,7 +71,7 @@ namespace rpc {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
-      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
     if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) != 0) {
@@ -93,7 +93,7 @@ namespace rpc {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
-      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
     ClientContext context;
@@ -115,7 +115,7 @@ namespace rpc {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
-      std::cout << termcolor::grey << utility::getClockTime() << termcolor::reset << yellow << n << reset << std::endl;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
     ClientContext context;
@@ -161,8 +161,8 @@ namespace app {
     }
 
     if (config->flag.debug) {
-      std::cout << termcolor::grey << "Size of cluster: " << State::memberList->size() << reset << std::endl;
-      cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
+      std::cout << grey << "Size of cluster: " << State::memberList->size() << reset << std::endl;
+      cout << grey << "Using config file at: " << config->config << reset << endl;
     }
 
     {
@@ -220,7 +220,7 @@ namespace app::server {
     if (State::config->flag.leader) {
       // We are leader, used mainly for testing
       if (State::config->flag.debug) {
-        std::cout << termcolor::yellow << "We are leader" << termcolor::reset << std::endl;
+        std::cout << yellow << "We are leader" << reset << std::endl;
       }
       State::master = std::make_shared<std::string>(selfAddress.toString());
     } else {
@@ -233,7 +233,7 @@ namespace app::server {
     // Check if we already have a session with the client
     if (info::sessions->find(client_id) != info::sessions->end()) {
       if (State::config->flag.debug) {
-        std::cout << termcolor::yellow << "Client with id " << client_id << " already has a session that hasn't yet been terminated." << termcolor::reset << std::endl;
+        std::cout << yellow << "Client with id " << client_id << " already has a session that hasn't yet been terminated." << reset << std::endl;
       }
       return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
     }
@@ -259,11 +259,10 @@ namespace app::server {
 
   void maintain_session(std::shared_ptr<Session> session) {
     if (State::config->flag.debug) {
-      std::cout << termcolor::cyan << "Maintaining the following session:" << endl
-                << termcolor::grey
-                << "client_id: " << session->client_id << endl
+      std::cout << cyan << "Maintaining the following session:" << endl
+                << grey << "client_id: " << session->client_id << endl
                 << "start time: " << chrono::system_clock::to_time_t(session->start_time) << endl
-                << "lease length: " << session->lease_length.count() << "ms" << termcolor::reset << endl;
+                << "lease length: " << session->lease_length.count() << "ms" << reset << endl;
     }
 
     // We don't want to block the first keep alive
@@ -282,7 +281,7 @@ namespace app::server {
       // Session timed out
       if (time_until_expire == chrono::nanoseconds(0)) {
         if (State::config->flag.debug) {
-          std::cout << termcolor::yellow << "Lease with client " << session->client_id << " is expired (i.e. session maitenence thread dies)." << termcolor::reset << std::endl;
+          std::cout << yellow << "Lease with client " << session->client_id << " is expired (i.e. session maitenence thread dies)." << reset << std::endl;
         }
 
         end_session(session);
@@ -293,7 +292,7 @@ namespace app::server {
       // Ready to reply to client
       if (time_until_expire <= chrono::seconds(1)) {
         if (State::config->flag.debug) {
-          std::cout << termcolor::grey << "Triggering keep_alive response to " << session->client_id << "." << termcolor::reset << std::endl;
+          std::cout << grey << "Triggering keep_alive response to " << session->client_id << "." << reset << std::endl;
         }
         in >> *(session->block_reply);
       }
@@ -321,7 +320,7 @@ namespace app::server {
     // Set the correct lease length
     if (!session->terminated) {
       if (State::config->flag.debug) {
-        std::cout << termcolor::grey << "Extending lease for client " << session->client_id << "." << termcolor::reset << std::endl;
+        std::cout << grey << "Extending lease for client " << session->client_id << "." << reset << std::endl;
       }
       session->lease_length = session->lease_length + chrono::milliseconds(utility::DEFAULT_LEASE_EXTENSION);
     }
@@ -361,7 +360,7 @@ namespace app::client {
 
       if (!status.ok()) {  // If server is down or replies with grpc::StatusCode::ABORTED
         if (State::config->flag.debug) {
-          cout << termcolor::grey << "Node " << key << " replied with an error." << termcolor::reset << endl;
+          cout << grey << "Node " << key << " replied with an error." << reset << endl;
         }
         continue;
       }
@@ -373,7 +372,7 @@ namespace app::client {
 
     if (info::master == nullptr) {
       if (State::config->flag.debug) {
-        cout << termcolor::red << "Could not establish a session with any server." << termcolor::reset << endl;
+        cout << red << "Could not establish a session with any server." << reset << endl;
       }
       return Status::CANCELLED;
     }
@@ -387,7 +386,7 @@ namespace app::client {
 
   void maintain_session() {
     if (State::config->flag.debug) {
-      cout << termcolor::yellow << "Beginning session maitenence." << termcolor::reset << endl;
+      cout << yellow << "Beginning session maitenence." << reset << endl;
     }
 
     // Shouldn't ever happen
@@ -404,12 +403,12 @@ namespace app::client {
       // If we successfully heard back from server before deadline
       if (status.ok()) {
         if (State::config->flag.debug) {
-          cout << termcolor::grey << "keep_alive response received. Lease extended." << termcolor::reset << endl;
+          cout << grey << "keep_alive response received. Lease extended." << reset << endl;
         }
         info::lease_length = chrono::milliseconds(new_lease_length);
       } else {
         if (State::config->flag.debug) {
-          cout << termcolor::red << "Entering jeopardy." << termcolor::reset << endl;
+          cout << red << "Entering jeopardy." << reset << endl;
         }
         // TODO:: Implement jeopardy
         info::jeopardy = true;
