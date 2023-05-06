@@ -2510,14 +2510,10 @@ namespace consensus {
   void usage(int argc, char** argv);
   void set_server_info(int argc, char** argv);
   void init_raft(ptr<state_machine> sm_instance);
-  void loop();
   void handle_result(ptr<_TestSuite::TestSuite::Timer> timer, raft_result& result, ptr<std::exception>& err);
   void append_log(const std::string& cmd, const std::vector<std::string>& tokens);
   void print_status(const std::string& cmd, const std::vector<std::string>& tokens);
-  bool do_cmd(const std::vector<std::string>& tokens);
-  void help(const std::string& cmd, const std::vector<std::string>& tokens);
   void add_server(const std::string& cmd, const std::vector<std::string>& tokens);
   void server_list(const std::string& cmd, const std::vector<std::string>& tokens);
-  std::vector<std::string> tokenize(const char* str, char c = ' ');
 
 }  // namespace consensus

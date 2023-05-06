@@ -126,53 +126,6 @@ namespace consensus {
               << "state machine value: " << get_sm()->get_current_value() << std::endl;
   }
 
-  void help(const std::string& cmd, const std::vector<std::string>& tokens) {
-    std::cout << "modify value: <+|-|*|/><operand>\n"
-              << "    +: add <operand> to state machine's value.\n"
-              << "    -: subtract <operand> from state machine's value.\n"
-              << "    *: multiple state machine'value by <operand>.\n"
-              << "    /: divide state machine's value by <operand>.\n"
-              << "    e.g.) +123\n"
-              << "\n"
-              << "add server: add <server id> <address>:<port>\n"
-              << "    e.g.) add 2 127.0.0.1:20000\n"
-              << "\n"
-              << "get current server status: st (or stat)\n"
-              << "\n"
-              << "get the list of members: ls (or list)\n"
-              << "\n";
-  }
-
-  bool do_cmd(const std::vector<std::string>& tokens) {
-    if (!tokens.size()) return true;
-
-    const std::string& cmd = tokens[0];
-
-    if (cmd == "q" || cmd == "exit") {
-      stuff.launcher_.shutdown(5);
-      stuff.reset();
-      return false;
-
-    } else if (cmd[0] == '+' || cmd[0] == '-' || cmd[0] == '*' || cmd[0] == '/') {
-      // e.g.) +1
-      append_log(cmd, tokens);
-
-    } else if (cmd == "add") {
-      // e.g.) add 2 localhost:12345
-      add_server(cmd, tokens);
-
-    } else if (cmd == "st" || cmd == "stat") {
-      print_status(cmd, tokens);
-
-    } else if (cmd == "ls" || cmd == "list") {
-      server_list(cmd, tokens);
-
-    } else if (cmd == "h" || cmd == "help") {
-      help(cmd, tokens);
-    }
-    return true;
-  }
-
   void check_additional_flags(int argc, char** argv) {
     for (int ii = 1; ii < argc; ++ii) {
       if (strcmp(argv[ii], "--async-handler") == 0) {
@@ -299,21 +252,6 @@ namespace consensus {
     exit(-1);
   }
 
-  void loop() {
-    char cmd[1000];
-    std::string prompt = "calc " + std::to_string(stuff.server_id_) + "> ";
-    while (true) {
-      std::cout << green << prompt << reset;
-      if (!std::cin.getline(cmd, 1000)) {
-        break;
-      }
-
-      std::vector<std::string> tokens = tokenize(cmd);
-      bool cont = do_cmd(tokens);
-      if (!cont) break;
-    }
-  }
-
   void add_server(const std::string& cmd, const std::vector<std::string>& tokens) {
     if (tokens.size() < 3) {
       std::cout << "too few arguments" << std::endl;
@@ -350,18 +288,6 @@ namespace consensus {
       }
       std::cout << std::endl;
     }
-  }
-
-  std::vector<std::string> tokenize(const char* str, char c) {
-    std::vector<std::string> tokens;
-    do {
-      const char* begin = str;
-      while (*str != c && *str)
-        str++;
-      if (begin != str) tokens.push_back(std::string(begin, str));
-    } while (0 != *str++);
-
-    return tokens;
   }
 
 };  // namespace consensus

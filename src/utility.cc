@@ -78,6 +78,8 @@ namespace utility::parse {
       m = Mode::BENCHMARK;
     else if (token == "3")
       m = Mode::CONSENSUS;
+    else if (token == "4")
+      m = Mode::INTERACTIVE;
     else
       in.setstate(std::ios_base::failbit);
     return in;
@@ -114,6 +116,7 @@ namespace utility::parse {
     EnumOption<Mode>::param_map["test"] = utility::parse::Mode::TEST;
     EnumOption<Mode>::param_map["benchmark"] = utility::parse::Mode::BENCHMARK;
     EnumOption<Mode>::param_map["consensus"] = utility::parse::Mode::CONSENSUS;
+    EnumOption<Mode>::param_map["interactive"] = utility::parse::Mode::INTERACTIVE;
 
     std::filesystem::path executablePath;
     {
@@ -132,7 +135,7 @@ namespace utility::parse {
 
         generic.add_options()("help,h", "CMD options list");
         generic.add_options()("config", po::value<std::string>(), "Configuration file");
-        generic.add_options()("mode,m", po::value<EnumOption<Mode>>(), "Mode of execution: either `app`, `test`, or `benchmark`");
+        generic.add_options()("mode,m", po::value<EnumOption<Mode>>(), "Mode of execution: either `app` for main executable; or for tests/user executable: `test`, `benchmark`, `interactive` ");
 
         primary.add_options()("port,p", po::value<unsigned short>(&config->port)->default_value(8000), "Port of RPC service");
         primary.add_options()("directory,d", po::value<std::string>(&config->directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp/server")), "Directory of data");
@@ -313,3 +316,36 @@ namespace utility::structs {
   const uint64_t CREATE_FILE = 0x8;
   const uint64_t EPHEMERAL = 0x10;
 }  // namespace utility::structs
+
+namespace utility::prompt {
+
+  typedef bool command_switch_t(std::vector<std::string>);  // a function type
+
+  void loop(std::string title, int id, std::function<command_switch_t> command_switch) {
+    char cmd[1000];
+    std::string prompt = title + " " + std::to_string(id) + "> ";
+    while (true) {
+      std::cout << green << prompt << reset;
+      if (!std::cin.getline(cmd, 1000)) {
+        break;
+      }
+
+      std::vector<std::string> tokens = tokenize(cmd);
+      bool cont = command_switch(tokens);
+      if (!cont) break;
+    }
+  }
+
+  std::vector<std::string> tokenize(const char* str, char c) {
+    std::vector<std::string> tokens;
+    do {
+      const char* begin = str;
+      while (*str != c && *str)
+        str++;
+      if (begin != str) tokens.push_back(std::string(begin, str));
+    } while (0 != *str++);
+
+    return tokens;
+  }
+
+}  // namespace utility::prompt

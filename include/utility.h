@@ -33,7 +33,8 @@ namespace utility::parse {
     APP = 0,
     TEST = 1,
     BENCHMARK = 2,
-    CONSENSUS = 3
+    CONSENSUS = 3,
+    INTERACTIVE = 4
   };
 
   /// @brief Address type that contains an address and port.
@@ -213,3 +214,9 @@ namespace utility::debug {
     }
   };
 }  // namespace utility::debug
+
+namespace utility::prompt {
+  typedef bool command_switch_t(std::vector<std::string>);  // a function type
+  void loop(std::string title, int id, std::function<command_switch_t> command_switch);
+  std::vector<std::string> tokenize(const char* str, char c = ' ');
+}  // namespace utility::prompt

@@ -1,0 +1,46 @@
+2023-05-06T05:43:48.315_889-05:00 [11342] [====] Start logger: ./srv1.log (32 MB per file, up to 10 files)	[consensus.cc:1398, start()]
+2023-05-06T05:43:48.319_852-05:00 [11342] [INFO] Raft ASIO listener initiated, UNSECURED	[asio_service.cxx:770, asio_rpc_listener()]
+2023-05-06T05:43:48.320_006-05:00 [11342] [INFO] parameters: timeout 200 - 400, heartbeat 100, leadership expiry 2000, max batch 100, backoff 50, snapshot distance 5, enable randomized snapshot creation NO, log sync stop gap 99999, reserved logs 5, client timeout 3000, auto forwarding OFF, API call type BLOCKING, custom commit quorum size 0, custom election quorum size 0, snapshot receiver INCLUDED, leadership transfer wait time 0, grace period of lagging state machine 0, snapshot IO: BLOCKING, parallel log appending: OFF	[raft_server.cxx:384, apply_and_log_current_params()]
+2023-05-06T05:43:48.320_038-05:00 [11342] [INFO] new timeout range: 200 -- 400	[raft_server.cxx:342, update_rand_timeout()]
+2023-05-06T05:43:48.320_104-05:00 [11342] [INFO]    === INIT RAFT SERVER ===
+commit index 0
+term 0
+election timer allowed
+log store start 1, end 0
+config log idx 0, prev log idx 0	[raft_server.cxx:166, raft_server()]
+2023-05-06T05:43:48.320_127-05:00 [11342] [INFO] peer 1: DC ID 0, localhost:8081, voting member, 1
+my id: 1, voting_member
+num peers: 0	[raft_server.cxx:257, raft_server()]
+2023-05-06T05:43:48.320_144-05:00 [11342] [INFO] global manager does not exist. will use local thread for commit and append	[raft_server.cxx:275, start_server()]
+2023-05-06T05:43:48.320_274-05:00 [11342] [INFO] wait for HB, for 50 + [200, 400] ms	[raft_server.cxx:300, start_server()]
+2023-05-06T05:43:48.320_317-05:00 [11350] [INFO] bg append_entries thread initiated	[handle_append_entries.cxx:104, append_entries_in_bg()]
+2023-05-06T05:43:48.649_017-05:00 [11348] [WARN] Election timeout, initiate leader election	[handle_timeout.cxx:286, handle_election_timeout()]
+2023-05-06T05:43:48.649_030-05:00 [11348] [INFO] [PRIORITY] decay, target 1 -> 1, mine 1	[handle_priority.cxx:213, decay_target_priority()]
+2023-05-06T05:43:48.649_066-05:00 [11348] [INFO] [ELECTION TIMEOUT] current role: follower, log last term 0, state term 0, target p 1, my p 1, hb dead, pre-vote NOT done	[handle_timeout.cxx:299, handle_election_timeout()]
+2023-05-06T05:43:48.649_093-05:00 [11348] [INFO] [VOTE INIT] my id 1, my role candidate, term 1, log idx 0, log term 0, priority (target 1 / mine 1)	[handle_vote.cxx:228, request_vote()]
+2023-05-06T05:43:48.649_114-05:00 [11348] [INFO] number of pending commit elements: 0	[raft_server.cxx:988, become_leader()]
+2023-05-06T05:43:48.649_122-05:00 [11348] [INFO] state machine commit index 0, precommit index 0, last log index 0	[raft_server.cxx:1001, become_leader()]
+2023-05-06T05:43:48.649_226-05:00 [11348] [INFO] [BECOME LEADER] appended new config at 1	[raft_server.cxx:1044, become_leader()]
+2023-05-06T05:43:48.649_343-05:00 [11349] [INFO] config at index 1 is committed, prev config log idx 0	[handle_commit.cxx:409, commit_conf()]
+2023-05-06T05:43:48.649_361-05:00 [11349] [INFO] new config log idx 1, prev log idx 0, cur config log idx 0, prev log idx 0	[handle_commit.cxx:649, reconfigure()]
+2023-05-06T05:43:48.649_418-05:00 [11349] [INFO] new configuration: log idx 1, prev log idx 0
+peer 1, DC ID 0, localhost:8081, voting member, 1
+my id: 1, leader: 1, term: 1	[handle_commit.cxx:865, reconfigure()]
+2023-05-06T05:44:02.807_504-05:00 [11342] [INFO] shutting down raft core	[raft_server.cxx:447, shutdown()]
+2023-05-06T05:44:02.807_552-05:00 [11342] [INFO] sent stop signal to the commit thread.	[raft_server.cxx:466, shutdown()]
+2023-05-06T05:44:02.807_569-05:00 [11342] [INFO] cancelled all schedulers.	[raft_server.cxx:472, shutdown()]
+2023-05-06T05:44:02.807_571-05:00 [11342] [INFO] commit thread stopped.	[raft_server.cxx:482, shutdown()]
+2023-05-06T05:44:02.807_585-05:00 [11342] [INFO] all pending commit elements dropped.	[raft_server.cxx:486, shutdown()]
+2023-05-06T05:44:02.807_595-05:00 [11342] [INFO] reset all pointers.	[raft_server.cxx:496, shutdown()]
+2023-05-06T05:44:02.807_600-05:00 [11342] [INFO] joined terminated commit thread.	[raft_server.cxx:511, shutdown()]
+2023-05-06T05:44:02.807_635-05:00 [11342] [INFO] sent stop signal to background append thread.	[raft_server.cxx:518, shutdown()]
+2023-05-06T05:44:02.807_637-05:00 [11350] [INFO] bg append_entries thread terminated	[handle_append_entries.cxx:113, append_entries_in_bg()]
+2023-05-06T05:44:02.807_682-05:00 [11342] [INFO] clean up auto-forwarding queue: 0 elems	[raft_server.cxx:526, shutdown()]
+2023-05-06T05:44:02.807_688-05:00 [11342] [INFO] clean up auto-forwarding clients	[raft_server.cxx:530, shutdown()]
+2023-05-06T05:44:02.807_700-05:00 [11342] [INFO] raft_server shutdown completed.	[raft_server.cxx:533, shutdown()]
+2023-05-06T05:44:02.807_792-05:00 [11345] [ERRO] failed to accept a rpc connection due to error 125, Operation aborted.	[asio_service.cxx:840, handle_accept()]
+2023-05-06T05:44:02.807_931-05:00 [11346] [INFO] end of asio worker thread, remaining threads: 3	[asio_service.cxx:1828, worker_entry()]
+2023-05-06T05:44:02.807_937-05:00 [11348] [INFO] end of asio worker thread, remaining threads: 1	[asio_service.cxx:1828, worker_entry()]
+2023-05-06T05:44:02.807_942-05:00 [11345] [INFO] end of asio worker thread, remaining threads: 0	[asio_service.cxx:1828, worker_entry()]
+2023-05-06T05:44:02.807_957-05:00 [11347] [INFO] end of asio worker thread, remaining threads: 1	[asio_service.cxx:1828, worker_entry()]
+2023-05-06T05:44:02.819_509-05:00 [11342] [====] Stop logger: ./srv1.log	[consensus.cc:1415, stop()]

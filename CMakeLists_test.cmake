@@ -3,7 +3,10 @@ set(TEST_FOLDER "${PROJECT_SOURCE_DIR}/test")
 set(BINARY_NAME test)
 
 set(SRC_FILES 
+  ${TEST_FOLDER}/entrypoint.cc
   ${TEST_FOLDER}/test.cc
+  ${TEST_FOLDER}/benchmark.cc
+  ${TEST_FOLDER}/interactive.cc
   ${SOURCE_FOLDER}/app.cc
   ${SOURCE_FOLDER}/utility.cc
   ${SOURCE_FOLDER}/consensus.cc

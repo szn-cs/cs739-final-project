@@ -1,4 +1,4 @@
-#include "common.h"
+#include "./common.h"
 
 /**
  * initialize configurations, run RPC servers, and start consensus coordination
@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 
   // parse options from different sources
   auto f = utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
-  remove_command_argument(argc, argv, config, variables, args, new_argv);
+  remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
   if (f) {
     f();  // print help info
     exit(0);
@@ -49,21 +49,16 @@ int main(int argc, char* argv[]) {
     set_server_info(argc, argv);
     check_additional_flags(argc, argv);
 
-    std::cout << "    -- Replicated Calculator with Raft --" << std::endl;
-    std::cout << "                         Version 0.1.0" << std::endl;
     std::cout << "    Server ID:    " << stuff.server_id_ << std::endl;
     std::cout << "    Endpoint:     " << stuff.endpoint_ << std::endl;
-    if (CALL_TYPE == raft_params::async_handler) {
+    if (CALL_TYPE == raft_params::async_handler)
       std::cout << "    async handler is enabled" << std::endl;
-    }
-    if (ASYNC_SNAPSHOT_CREATION) {
+    if (ASYNC_SNAPSHOT_CREATION)
       std::cout << "    snapshots are created asynchronously" << std::endl;
-    }
 
     init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION));
-    loop();
 
-    return 0;
+    // prev: run prompt::loop()
   };
 
   switch (config->mode) {
