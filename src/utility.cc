@@ -154,8 +154,8 @@ namespace utility::parse {
 
       if (variables.count("help"))
         ([cmd_options]() {
-          std::cout << green << "Generic options: \n"
-                    << reset << cmd_options << '\n'
+          std::cout << on_green << blink << "Generic options:" << reset << "\n"
+                    << cmd_options << '\n'
                     << endl;
         })();
 
@@ -264,8 +264,8 @@ namespace utility::parse {
 
       if (variables.count("help"))
         return [cmd_options]() {
-          std::cout << green << "Distributed Lock Service - program options: \n"
-                    << reset << cmd_options << '\n'
+          std::cout << on_green << blink << "Distributed Lock Service - program options:" << reset << "\n"
+                    << cmd_options << '\n'
                     << endl;
         };
     } catch (const po::error& ex) {
@@ -346,8 +346,8 @@ namespace utility::parse {
 
       if (variables.count("help"))
         return [cmd_options]() {
-          std::cout << green << "Test executable - program options: \n"
-                    << reset << cmd_options << '\n'
+          std::cout << on_green << blink << "Test executable - program options:" << reset << "\n"
+                    << cmd_options << "\n"
                     << endl;
         };
 

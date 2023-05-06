@@ -75,7 +75,50 @@
 using namespace std;
 using namespace grpc;
 using namespace interface;
+
 using grpc::ClientAsyncResponseReader, grpc::CompletionQueue, grpc::ServerAsyncResponseWriter, grpc::ServerCompletionQueue;
 using grpc::Server, grpc::ServerBuilder, grpc::ServerContext, grpc::ServerReader, grpc::ServerWriter, grpc::Status;  // https://grpc.github.io/grpc/core/md_doc_statuscodes.html
-using termcolor::reset, termcolor::yellow, termcolor::red, termcolor::blue, termcolor::cyan, termcolor::grey, termcolor::magenta, termcolor::green;
+
+// colors at https://github.com/ikalnytskyi/termcolor
+using termcolor::on_grey,
+    termcolor::reset,
+    termcolor::on_red,
+    termcolor::on_green,
+    termcolor::on_yellow,
+    termcolor::on_blue,
+    termcolor::on_magenta,
+    termcolor::on_cyan,
+    termcolor::on_white,
+    termcolor::on_bright_grey,
+    termcolor::on_bright_red,
+    termcolor::on_bright_green,
+    termcolor::on_bright_yellow,
+    termcolor::on_bright_blue,
+    termcolor::on_bright_magenta,
+    termcolor::on_bright_cyan,
+    termcolor::on_bright_white,
+    termcolor::yellow,
+    termcolor::red,
+    termcolor::blue,
+    termcolor::cyan,
+    termcolor::grey,
+    termcolor::magenta,
+    termcolor::green,
+    termcolor::bright_grey,
+    termcolor::bright_red,
+    termcolor::bright_green,
+    termcolor::bright_yellow,
+    termcolor::bright_blue,
+    termcolor::bright_magenta,
+    termcolor::bright_cyan,
+    termcolor::bright_white,
+    termcolor::dark,
+    termcolor::bold,
+    termcolor::italic,
+    termcolor::underline,
+    termcolor::blink,
+    termcolor::reverse,
+    termcolor::concealed,
+    termcolor::crossed;
+
 namespace fs = std::filesystem;

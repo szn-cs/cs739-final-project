@@ -22,11 +22,14 @@ int main(int argc, char* argv[]) {
   auto m_app = [&argc, &argv, &variables, &config]() {
     cout << grey << "mode = APP" << reset << endl;
 
+    // handle directory:
+    fs::create_directories(fs::absolute(config->directory));  // create directory if doesn't exist
+
     // Initialize Cluster data & Node instances
     app::initializeStaticInstance(config, config->cluster);
 
-    // handle directory:
-    fs::create_directories(fs::absolute(config->directory));  // create database direcotry directory if doesn't exist
+    // run NuRaft stuff
+    app::init_consensus();
 
     // Initialize the server data structures
     app::server::init_server_info();
@@ -40,6 +43,12 @@ int main(int argc, char* argv[]) {
     // TODO:
 
     t.join();
+
+    {  // terminate app
+      // gracefully terminate NuRaft & ASIO used
+      consensus::stuff.launcher_.shutdown(5);
+      consensus::stuff.reset();
+    }
   };
 
   switch (config->mode) {

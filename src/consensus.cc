@@ -35,6 +35,7 @@ namespace consensus {
     char cmd_char = cmd[0];
     int operand = atoi(tokens[0].substr(1).c_str());
     consensus_state_machine::op_type op = consensus_state_machine::ADD;
+
     switch (cmd_char) {
       case '+':
         op = consensus_state_machine::ADD;
@@ -98,34 +99,6 @@ namespace consensus {
     }
   }
 
-  void print_status(const std::string& cmd, const std::vector<std::string>& tokens) {
-    ptr<log_store> ls = stuff.smgr_->load_log_store();
-
-    std::cout << "my server id: " << stuff.server_id_ << std::endl
-              << "leader id: " << stuff.raft_instance_->get_leader() << std::endl
-              << "Raft log range: ";
-    if (ls->start_index() >= ls->next_slot()) {
-      // Start index can be the same as next slot when the log store is empty.
-      std::cout << "(empty)" << std::endl;
-    } else {
-      std::cout << ls->start_index() << " - " << (ls->next_slot() - 1) << std::endl;
-    }
-    std::cout << "last committed index: " << stuff.raft_instance_->get_committed_log_idx()
-              << std::endl
-              << "current term: " << stuff.raft_instance_->get_term() << std::endl
-              << "last snapshot log index: "
-              << (stuff.sm_->last_snapshot()
-                      ? stuff.sm_->last_snapshot()->get_last_log_idx()
-                      : 0)
-              << std::endl
-              << "last snapshot log term: "
-              << (stuff.sm_->last_snapshot()
-                      ? stuff.sm_->last_snapshot()->get_last_log_term()
-                      : 0)
-              << std::endl
-              << "state machine value: " << get_sm()->get_current_value() << std::endl;
-  }
-
   void usage(int argc, char** argv) {
     std::stringstream ss;
     ss << "Usage: \n";
@@ -136,9 +109,12 @@ namespace consensus {
     exit(0);
   }
 
-  void init_raft(ptr<state_machine> sm_instance) {
+  void init_raft(ptr<state_machine> sm_instance, std::string log_path) {
     // Logger.
-    std::string log_file_name = "./srv" + std::to_string(stuff.server_id_) + ".log";
+    fs::create_directories(fs::absolute(log_path));
+    std::string log_file_name = utility::concatenatePath(log_path, std::to_string(stuff.server_id_) + ".log");
+    cout << grey << "Server log file: " << log_file_name << reset << endl;
+
     ptr<consensus::_logger::logger_wrapper> log_wrap = cs_new<consensus::_logger::logger_wrapper>(log_file_name, 4);
     stuff.raft_logger_ = log_wrap;
 
@@ -200,29 +176,57 @@ namespace consensus {
     exit(-1);
   }
 
-  void add_server(const std::string& cmd, const std::vector<std::string>& tokens) {
-    if (tokens.size() < 3) {
+  void add_server(const std::vector<std::string>& tokens) {
+    if (tokens.size() < 2) {
       std::cout << "too few arguments" << std::endl;
       return;
     }
 
-    int server_id_to_add = atoi(tokens[1].c_str());
+    int server_id_to_add = atoi(tokens[0].c_str());
     if (!server_id_to_add || server_id_to_add == stuff.server_id_) {
       std::cout << "wrong server id: " << server_id_to_add << std::endl;
       return;
     }
 
-    std::string endpoint_to_add = tokens[2];
+    std::string endpoint_to_add = tokens[1];
     srv_config srv_conf_to_add(server_id_to_add, endpoint_to_add);
     ptr<raft_result> ret = stuff.raft_instance_->add_srv(srv_conf_to_add);
     if (!ret->get_accepted()) {
       std::cout << "failed to add server: " << ret->get_result_code() << std::endl;
       return;
     }
-    std::cout << "async request is in progress (check with `list` command)" << std::endl;
+    std::cout << "async request is in progress (check with `server_list` function)" << std::endl;
   }
 
-  void server_list(const std::string& cmd, const std::vector<std::string>& tokens) {
+  void print_status() {
+    ptr<log_store> ls = stuff.smgr_->load_log_store();
+
+    std::cout << cyan << "my server id: " << stuff.server_id_ << std::endl
+              << "leader id: " << stuff.raft_instance_->get_leader() << std::endl
+              << "Raft log range: ";
+    if (ls->start_index() >= ls->next_slot()) {
+      // Start index can be the same as next slot when the log store is empty.
+      std::cout << "(empty)" << std::endl;
+    } else {
+      std::cout << ls->start_index() << " - " << (ls->next_slot() - 1) << std::endl;
+    }
+    std::cout << "last committed index: " << stuff.raft_instance_->get_committed_log_idx()
+              << std::endl
+              << "current term: " << stuff.raft_instance_->get_term() << std::endl
+              << "last snapshot log index: "
+              << (stuff.sm_->last_snapshot()
+                      ? stuff.sm_->last_snapshot()->get_last_log_idx()
+                      : 0)
+              << std::endl
+              << "last snapshot log term: "
+              << (stuff.sm_->last_snapshot()
+                      ? stuff.sm_->last_snapshot()->get_last_log_term()
+                      : 0)
+              << std::endl
+              << "state machine value: " << get_sm()->get_current_value() << reset << std::endl;
+  }
+
+  void server_list() {
     std::vector<ptr<srv_config>> configs;
     stuff.raft_instance_->get_srv_config_all(configs);
 
@@ -230,11 +234,11 @@ namespace consensus {
 
     for (auto& entry : configs) {
       ptr<srv_config>& srv = entry;
-      std::cout << "server id " << srv->get_id() << ": " << srv->get_endpoint();
+      std::cout << cyan << "server id " << srv->get_id() << ": " << srv->get_endpoint();
       if (srv->get_id() == leader_id) {
         std::cout << " (LEADER)";
       }
-      std::cout << std::endl;
+      std::cout << reset << std::endl;
     }
   }
 

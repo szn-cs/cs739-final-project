@@ -4,17 +4,16 @@ int main(int argc, char** argv) {
   cout << termcolor::grey << utility::getClockTime() << termcolor::reset << endl;
   std::shared_ptr<utility::parse::Config> config = std::make_shared<utility::parse::Config>();
   boost::program_options::variables_map variables;
+  std::vector<std::string> args(argv, argv + argc);
+  std::vector<char*> new_argv;
 
   // parse options from different sources
   utility::parse::parse_options<utility::parse::Parse::GENERIC>(argc, argv, config, variables);
   utility::parse::parse_options<utility::parse::Parse::APP>(argc, argv, config, variables);
 
-  auto m_test = [&argc, &argv, &variables, &config]() {
+  auto m_test = [&argc, &argv, &variables, &config, &args, &new_argv]() {
     using namespace test;
-
     cout << termcolor::grey << "mode = TEST" << termcolor::reset << endl;
-    // Initialize Cluster data & Node instances
-    app::initializeStaticInstance(config, config->cluster);
 
     // additional parsing
     auto f = utility::parse::parse_options<utility::parse::Parse::TEST>(argc, argv, config, variables);  // parse options from different sources
@@ -22,6 +21,10 @@ int main(int argc, char** argv) {
       f();  // print help info
       exit(0);
     }
+
+    // Initialize Cluster data & Node instances
+    app::initializeStaticInstance(config, config->cluster);
+    remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
 
     //   ./target/app --mode test --command set --key k1 --value v1 --target 127.0.1.1:8002
     if (!variables.count("command"))
@@ -56,20 +59,19 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto m_benchmark = [&argc, &argv, &variables, &config]() {
+  auto m_benchmark = [&argc, &argv, &variables, &config, &args, &new_argv]() {
     using namespace benchmark;
 
     cout << termcolor::grey << "mode = BENCHMARK" << termcolor::reset << endl;
-    std::vector<std::string> args(argv, argv + argc);
-    std::vector<char*> new_argv;
-    // Initialize Cluster data & Node instances
-    app::initializeStaticInstance(config, config->cluster);
-    remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
 
     // additional parsing
     auto f = utility::parse::parse_options<utility::parse::Parse::TEST>(argc, argv, config, variables);  // parse options from different sources
     if (f)
       f();
+
+    // Initialize Cluster data & Node instances
+    app::initializeStaticInstance(config, config->cluster);
+    remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
 
     if (config->flag.debug)
       cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
@@ -78,8 +80,19 @@ int main(int argc, char** argv) {
     benchmark::RunSpecifiedBenchmarks();
   };
 
-  auto m_interactive = [&argc, &argv, &variables, &config]() {
+  auto m_interactive = [&argc, &argv, &variables, &config, &args, &new_argv]() {
     using namespace interactive;
+
+    // additional parsing
+    auto f = utility::parse::parse_options<utility::parse::Parse::TEST>(argc, argv, config, variables);  // parse options from different sources
+    if (f) {
+      f();  // print help info
+      exit(0);
+    }
+
+    // Initialize Cluster data & Node instances
+    app::initializeStaticInstance(config, config->cluster);
+    remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
 
     std::cout << "    -- Distributed Lock Service --" << std::endl;
     std::cout << "                         Version 0.1.0" << std::endl;

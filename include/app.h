@@ -23,6 +23,7 @@ namespace app {
 
   void initializeStaticInstance(std::shared_ptr<utility::parse::Config> config, std::vector<std::string> addressList);
   bool createNode(const std::string &file_name, bool is_dir, uint64_t *instance_number);
+  void init_consensus();
 
 }  // namespace app
 

@@ -3,39 +3,29 @@
 // interactive command prompt for testing the client
 namespace interactive {
 
-  bool do_cmd(const std::vector<std::string>& tokens) {
-    using namespace consensus;
-
+  bool do_cmd(const std::vector<std::string>& tokens) {  // TODO: call functionality form Chubby server/client
     if (!tokens.size()) return true;
 
     const std::string& cmd = tokens[0];
 
     if (cmd == "q" || cmd == "exit") {
-      stuff.launcher_.shutdown(5);
-      stuff.reset();
       return false;
-
     } else if (cmd[0] == '+' || cmd[0] == '-' || cmd[0] == '*' || cmd[0] == '/') {
-      // e.g.) +1
-      append_log(cmd, tokens);
-
+      // do something with Chubby specific commands
     } else if (cmd == "add") {
-      // e.g.) add 2 localhost:12345
-      add_server(cmd, tokens);
-
+      // connect to server
     } else if (cmd == "st" || cmd == "stat") {
-      print_status(cmd, tokens);
-
+      // print information about session, cluster, consensus, handles, locks, etc.
     } else if (cmd == "ls" || cmd == "list") {
-      server_list(cmd, tokens);
-
+      // list Chubby servers
     } else if (cmd == "h" || cmd == "help") {
-      help(cmd, tokens);
+      help();
     }
+
     return true;
   }
 
-  void help(const std::string& cmd, const std::vector<std::string>& tokens) {
+  void help() {  // TODO: replace with Chubby instructions
     std::cout << "modify value: <+|-|*|/><operand>\n"
               << "    +: add <operand> to state machine's value.\n"
               << "    -: subtract <operand> from state machine's value.\n"

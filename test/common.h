@@ -21,6 +21,6 @@ namespace test {
 
 namespace interactive {
   bool do_cmd(const std::vector<std::string>& tokens);
-  void help(const std::string& cmd, const std::vector<std::string>& tokens);
+  void help();
 
 }  // namespace interactive

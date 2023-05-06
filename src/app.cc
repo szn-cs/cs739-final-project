@@ -180,17 +180,34 @@ namespace app {
           ASYNC_SNAPSHOT_CREATION = true;
         }
       }
+    }
+  }
 
-      if (config->flag.debug) {
-        std::cout << "    Server ID:    " << stuff.server_id_ << std::endl;
-        std::cout << "    Endpoint:     " << stuff.endpoint_ << std::endl;
-        if (CALL_TYPE == raft_params::async_handler)
-          std::cout << "    async handler is enabled" << std::endl;
-        if (ASYNC_SNAPSHOT_CREATION)
-          std::cout << "    snapshots are created asynchronously" << std::endl;
-      }
+  void init_consensus() {
+    using namespace consensus;
 
-      init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION));
+    if (app::State::config->flag.debug) {
+      std::cout << cyan << "    Server ID:    " << stuff.server_id_ << std::endl;
+      std::cout << "    Endpoint:     " << stuff.endpoint_ << std::endl;
+      if (CALL_TYPE == raft_params::async_handler)
+        std::cout << "    async handler is enabled" << std::endl;
+      if (ASYNC_SNAPSHOT_CREATION)
+        std::cout << "    snapshots are created asynchronously" << reset << std::endl;
+    }
+
+    init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION), "./tmp/");
+
+    if (app::State::config->flag.debug) {
+      print_status();
+      server_list();
+    }
+    {
+      const std::vector<std::string>& tokens = {"2", "localhost:9002"};
+      add_server(tokens);
+    }
+    {
+      const std::vector<std::string>& tokens = {"+123"};
+      append_log("+", tokens);
     }
   }
 
