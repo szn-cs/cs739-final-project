@@ -6,9 +6,8 @@ int main(int argc, char** argv) {
   boost::program_options::variables_map variables;
 
   // parse options from different sources
-  auto f = utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
-  if (f)
-    f();  // print help info
+  utility::parse::parse_options<utility::parse::Parse::GENERIC>(argc, argv, config, variables);
+  utility::parse::parse_options<utility::parse::Parse::APP>(argc, argv, config, variables);
 
   auto m_test = [&argc, &argv, &variables, &config]() {
     using namespace test;
@@ -18,7 +17,7 @@ int main(int argc, char** argv) {
     app::initializeStaticInstance(config, config->cluster);
 
     // additional parsing
-    auto f = utility::parse::parse_options<utility::parse::Mode::TEST>(argc, argv, config, variables);  // parse options from different sources
+    auto f = utility::parse::parse_options<utility::parse::Parse::TEST>(argc, argv, config, variables);  // parse options from different sources
     if (f) {
       f();  // print help info
       exit(0);
@@ -68,7 +67,7 @@ int main(int argc, char** argv) {
     remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
 
     // additional parsing
-    auto f = utility::parse::parse_options<utility::parse::Mode::TEST>(argc, argv, config, variables);  // parse options from different sources
+    auto f = utility::parse::parse_options<utility::parse::Parse::TEST>(argc, argv, config, variables);  // parse options from different sources
     if (f)
       f();
 

@@ -11,7 +11,8 @@ int main(int argc, char* argv[]) {
   std::vector<char*> new_argv;
 
   // parse options from different sources
-  auto f = utility::parse::parse_options<utility::parse::Mode::APP>(argc, argv, config, variables);
+  utility::parse::parse_options<utility::parse::Parse::GENERIC>(argc, argv, config, variables);
+  auto f = utility::parse::parse_options<utility::parse::Parse::APP>(argc, argv, config, variables);
   remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
   if (f) {
     f();  // print help info

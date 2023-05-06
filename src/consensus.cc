@@ -140,12 +140,7 @@ namespace consensus {
     std::stringstream ss;
     ss << "Usage: \n";
     ss << "    " << argv[0] << " <server id> <IP address and port> [<options>]";
-    ss << std::endl
-       << std::endl;
-    ss << "    options:" << std::endl;
-    ss << "      --async-handler: use async type handler." << std::endl;
-    ss << "      --async-snapshot-creation: create snapshots asynchronously." << std::endl
-       << std::endl;
+    ss << std::endl;
 
     std::cout << ss.str();
     exit(0);

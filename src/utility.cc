@@ -71,6 +71,8 @@ namespace utility::parse {
     std::string token;
     in >> token;
     if (token == "0")
+      m = Mode::EMPTY;
+    else if (token == "5")
       m = Mode::APP;
     else if (token == "1")
       m = Mode::TEST;
@@ -108,48 +110,101 @@ namespace utility::parse {
   }
 
   template <>
-  std::function<void()> parse_options<Mode::APP>(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  std::function<void()> parse_options<Parse::GENERIC>(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
-
-    EnumOption<Mode>::param_map["app"] = utility::parse::Mode::APP;
-    EnumOption<Mode>::param_map["test"] = utility::parse::Mode::TEST;
-    EnumOption<Mode>::param_map["benchmark"] = utility::parse::Mode::BENCHMARK;
-    EnumOption<Mode>::param_map["consensus"] = utility::parse::Mode::CONSENSUS;
-    EnumOption<Mode>::param_map["interactive"] = utility::parse::Mode::INTERACTIVE;
 
     std::filesystem::path executablePath;
     {
       fs::path full_path(fs::initial_path<fs::path>());
       full_path = fs::system_complete(fs::path(argv[0]));
       executablePath = full_path.parent_path().string();
-    }  // namespace boost::filesystem;
+    }
+
+    EnumOption<Mode>::param_map["empty"] = utility::parse::Mode::EMPTY;
+    EnumOption<Mode>::param_map["app"] = utility::parse::Mode::APP;
+    EnumOption<Mode>::param_map["consensus"] = utility::parse::Mode::CONSENSUS;
+    EnumOption<Mode>::param_map["test"] = utility::parse::Mode::TEST;
+    EnumOption<Mode>::param_map["benchmark"] = utility::parse::Mode::BENCHMARK;
+    EnumOption<Mode>::param_map["interactive"] = utility::parse::Mode::INTERACTIVE;
+
+    po::options_description cmd_options;
+
+    try {
+      { /** define program options schema */
+        po::options_description generic("");
+
+        generic.add_options()("help,h", "CMD options list");
+        generic.add_options()("config", po::value<std::string>(), "Configuration file");
+        generic.add_options()("mode,m", po::value<EnumOption<Mode>>(), "Mode of execution: either `app` for main executable; or for tests/user executable: `test`, `benchmark`, `interactive` ");
+
+        cmd_options.add(generic);
+      }
+
+      { /** parse & set options from different sources */
+        // po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::store(po::command_line_parser(argc, argv).options(cmd_options).allow_unregistered().run(), variables);
+      }
+
+      po::notify(variables);
+
+      if (variables.count("mode"))
+        config->mode = variables["mode"].as<EnumOption<Mode>>().value;  // copy manually the variables
+
+      if (variables.count("help"))
+        ([cmd_options]() {
+          std::cout << green << "Generic options: \n"
+                    << reset << cmd_options << '\n'
+                    << endl;
+        })();
+
+    } catch (const po::error& ex) {
+      std::cerr << red << ex.what() << reset << "\n\n";
+      std::cout << "(Check options with --help flag.)\n"
+                << endl;
+
+      exit(1);
+    }
+
+    return nullptr;
+  }
+
+  template <>
+  std::function<void()> parse_options<Parse::APP>(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+    namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
+    namespace fs = boost::filesystem;
+
+    std::filesystem::path executablePath;
+    {
+      fs::path full_path(fs::initial_path<fs::path>());
+      full_path = fs::system_complete(fs::path(argv[0]));
+      executablePath = full_path.parent_path().string();
+    }
 
     po::options_description cmd_options;
     po::options_description file_options;
 
     try {
       { /** define program options schema */
-        po::options_description generic("Generic options");
-        po::options_description primary("Main program options");
+        po::options_description app("--mode app");
 
-        generic.add_options()("help,h", "CMD options list");
-        generic.add_options()("config", po::value<std::string>(), "Configuration file");
-        generic.add_options()("mode,m", po::value<EnumOption<Mode>>(), "Mode of execution: either `app` for main executable; or for tests/user executable: `test`, `benchmark`, `interactive` ");
+        app.add_options()("port,p", po::value<unsigned short>(&config->port)->default_value(8000), "Port of RPC service");
+        app.add_options()("directory,d", po::value<std::string>(&config->directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp/server")), "Directory of data");
+        app.add_options()("cluster.address,a", make_value<std::vector<std::string>>(&config->cluster), "Addresses (incl. ports) of cluster participants <address:port>");
+        app.add_options()("flag.debug,g", po::bool_switch(&config->flag.debug)->default_value(false), "Debug flag");
+        app.add_options()("flag.leader", po::bool_switch(&config->flag.leader)->default_value(false), "testing: leader flag");
+        app.add_options()("flag.local_ubuntu", po::bool_switch(&config->flag.local_ubuntu)->default_value(false), "indicate if running locally on ubuntu, in which case the machine ip is 127.0.0.1");
+        app.add_options()("flag.timeout", po::value<int>(&config->flag.timeout)->default_value(1000), "Timeout in ms");
+        app.add_options()("flag.failrate", po::value<int>(&config->flag.failrate)->default_value(0), "Failrate: percentile");
+        app.add_options()("flag.latency", po::bool_switch(&config->flag.latency)->default_value(false), "latency flag: allow for random latency in local machine testing");
+        app.add_options()("flag.election", po::bool_switch(&config->flag.election)->default_value(true), "latency flag: allow for random latency in local machine testing");
 
-        primary.add_options()("port,p", po::value<unsigned short>(&config->port)->default_value(8000), "Port of RPC service");
-        primary.add_options()("directory,d", po::value<std::string>(&config->directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp/server")), "Directory of data");
-        primary.add_options()("cluster.address,a", make_value<std::vector<std::string>>(&config->cluster), "Addresses (incl. ports) of cluster participants <address:port>");
-        primary.add_options()("flag.debug,g", po::bool_switch(&config->flag.debug)->default_value(false), "Debug flag");
-        primary.add_options()("flag.leader", po::bool_switch(&config->flag.leader)->default_value(false), "testing: leader flag");
-        primary.add_options()("flag.local_ubuntu", po::bool_switch(&config->flag.local_ubuntu)->default_value(false), "indicate if running locally on ubuntu, in which case the machine ip is 127.0.0.1");
-        primary.add_options()("flag.timeout", po::value<int>(&config->flag.timeout)->default_value(1000), "Timeout in ms");
-        primary.add_options()("flag.failrate", po::value<int>(&config->flag.failrate)->default_value(0), "Failrate: percentile");
-        primary.add_options()("flag.latency", po::bool_switch(&config->flag.latency)->default_value(false), "latency flag: allow for random latency in local machine testing");
-        primary.add_options()("flag.election", po::bool_switch(&config->flag.election)->default_value(true), "latency flag: allow for random latency in local machine testing");
+        // TODO:
+        // ss << "      --async-handler: use async type handler." << std::endl;
+        // ss << "      --async-snapshot-creation: create snapshots asynchronously." << std::endl
 
-        cmd_options.add(generic).add(primary);  // set options allowed on command line
-        file_options.add(primary);              // set options allowed in config file
+        cmd_options.add(app);   // set options allowed on command line
+        file_options.add(app);  // set options allowed in config file
       }
 
       { /** parse & set options from different sources */
@@ -172,13 +227,12 @@ namespace utility::parse {
 
       po::notify(variables);
 
-      // copy manually the variables:
-      config->mode = (variables.count("mode")) ? variables["mode"].as<EnumOption<Mode>>().value : Mode::APP;
+      if (config->mode == Mode::EMPTY) config->mode = Mode::APP;
 
       if (variables.count("help"))
         return [cmd_options]() {
-          std::cout << "Distributed Replicated Database\n"
-                    << cmd_options << '\n'
+          std::cout << green << "Distributed Lock Service - program options: \n"
+                    << reset << cmd_options << '\n'
                     << endl;
         };
 
@@ -194,7 +248,7 @@ namespace utility::parse {
   }
 
   template <>
-  std::function<void()> parse_options<Mode::TEST>(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
+  std::function<void()> parse_options<Parse::TEST>(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables) {
     namespace po = boost::program_options;  // boost https://www.boost.org/doc/libs/1_81_0/doc/html/po.html
     namespace fs = boost::filesystem;
 
@@ -202,16 +256,33 @@ namespace utility::parse {
     po::options_description file_options;
 
     try {
-      { /** define program options schema */
-        po::options_description user("User program options");
+      /** define program options schema */
+      {
+        po::options_description test("--mode test");
 
-        user.add_options()("target,t", po::value<std::string>()->default_value("127.0.1.1:8000"), "target address to send to");
-        user.add_options()("command,c", po::value<std::string>()->default_value("get"), "command");
-        user.add_options()("key,k", po::value<std::string>()->default_value("default-key"), "key");
-        user.add_options()("value,v", po::value<std::string>()->default_value("default-value"), "value");
+        test.add_options()("command,c", po::value<std::string>()->default_value("get"), "command");
+        test.add_options()("key,k", po::value<std::string>()->default_value("default-key"), "key");
+        test.add_options()("value,v", po::value<std::string>()->default_value("default-value"), "value");
+        test.add_options()("target,t", po::value<std::string>()->default_value("127.0.1.1:8000"), "target address to send to");
 
-        cmd_options.add(user);   // set options allowed on command line
-        file_options.add(user);  // set options allowed in config file
+        cmd_options.add(test);   // set options allowed on command line
+        file_options.add(test);  // set options allowed in config file
+      }
+      {
+        po::options_description benchmark("--mode benchmark");
+
+        // benchmark.add_options()("", po::value<std::string>()->default_value(""), "");
+
+        cmd_options.add(benchmark);   // set options allowed on command line
+        file_options.add(benchmark);  // set options allowed in config file
+      }
+      {
+        po::options_description interactive("--mode interactive");
+
+        // interactive.add_options()("", po::value<std::string>()->default_value(""), "");
+
+        cmd_options.add(interactive);   // set options allowed on command line
+        file_options.add(interactive);  // set options allowed in config file
       }
 
       { /** parse & set options from different sources */
@@ -231,10 +302,12 @@ namespace utility::parse {
         po::notify(variables);
       }
 
+      if (config->mode == Mode::EMPTY) config->mode = Mode::TEST;
+
       if (variables.count("help"))
         return [cmd_options]() {
-          std::cout << "Test binary: \n"
-                    << cmd_options << '\n'
+          std::cout << green << "Test executable - program options: \n"
+                    << reset << cmd_options << '\n'
                     << endl;
         };
 

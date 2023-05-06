@@ -29,12 +29,19 @@ namespace utility {
 
 namespace utility::parse {
 
-  enum Mode {
-    APP = 0,
+  enum class Parse {
+    GENERIC = 0,
+    APP = 1,
+    TEST = 2,
+  };
+
+  enum class Mode {
+    EMPTY = 0,
+    APP = 5,
     TEST = 1,
     BENCHMARK = 2,
     CONSENSUS = 3,
-    INTERACTIVE = 4
+    INTERACTIVE = 4,
   };
 
   /// @brief Address type that contains an address and port.
@@ -97,7 +104,7 @@ namespace utility::parse {
     unsigned short port;               // RPC expotred ports
     std::string directory;             // directory of database data
     std::vector<std::string> cluster;  // addresses of nodes in cluster
-    enum Mode mode;                    // can be either "test" or "app"; not sure how to use enums with the library instead.
+    Mode mode;                         // can be either "test" or "app"; not sure how to use enums with the library instead.
     struct flag {
       bool debug;  // debug flag
       bool leader;
@@ -150,11 +157,8 @@ namespace utility::parse {
   template <typename T>
   boost::program_options::typed_value<T>* make_value(T* store_to);
 
-  /**
-     * https://download.cosine.nl/gvacanti/parsing_configuration_files_c++_CVu265.pdf
-     *
-    */
-  template <Mode mode>
+  /** boost::program_options documentation https://download.cosine.nl/gvacanti/parsing_configuration_files_c++_CVu265.pdf */
+  template <Parse mode>
   std::function<void()> parse_options(int& argc, char**& argv, const std::shared_ptr<Config>& config, boost::program_options::variables_map& variables);
   // quick fix to consume arguments and remove them to prevent conflicts with other tools
   void remove_command_argument(int& argc, char**& argv, const std::shared_ptr<utility::parse::Config>& config, boost::program_options::variables_map& variables, std::vector<std::string>& args, std::vector<char*>& new_argv);
