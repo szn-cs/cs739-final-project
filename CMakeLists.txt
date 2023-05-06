@@ -47,7 +47,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dependency/NuRaft)
 # NOTE: CMake if `.so` shared library & `.a` shared library in same folder, will always no matter what prefer `.so`
 # pick static version by removing .so and adding to find_library `NAMES "libnuraft.a"` instead
 # NOTE: for some reason PATH doesn't work
-find_library(NURAFT_LIBRARY NAMES nuraft PATHS ${CMAKE_CURRENT_BINARY_DIR}/dependency/NuRaft/ REQUIRED NO_DEFAULT_PATH DOC "ebay/NuRaft library") # looking for libnuraft.a for static & .so for dynamic
+find_library(NURAFT_LIBRARY NAMES nuraft PATHS ${CMAKE_CURRENT_BINARY_DIR}/dependency/NuRaft/ NO_DEFAULT_PATH DOC "ebay/NuRaft library") # looking for libnuraft.a for static & .so for dynamic
 if (NOT NURAFT_LIBRARY)
   set(NURAFT_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/dependency/NuRaft/libnuraft.so)
 endif()
