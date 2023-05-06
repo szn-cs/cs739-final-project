@@ -164,6 +164,34 @@ namespace app {
       std::cout << termcolor::grey << "Size of cluster: " << State::memberList->size() << reset << std::endl;
       cout << termcolor::grey << "Using config file at: " << config->config << termcolor::reset << endl;
     }
+
+    {
+      using namespace consensus;
+
+      {
+        stuff.server_id_ = config->consensus.serverId;
+        stuff.port_ = config->consensus.port;
+        stuff.addr_ = config->consensus.address;
+        stuff.endpoint_ = stuff.addr_ + ":" + std::to_string(stuff.port_);
+
+        if (config->consensus.asyncSnapshotCreation) {
+          CALL_TYPE = raft_params::async_handler;
+        } else if (config->consensus.asyncHandler) {
+          ASYNC_SNAPSHOT_CREATION = true;
+        }
+      }
+
+      if (config->flag.debug) {
+        std::cout << "    Server ID:    " << stuff.server_id_ << std::endl;
+        std::cout << "    Endpoint:     " << stuff.endpoint_ << std::endl;
+        if (CALL_TYPE == raft_params::async_handler)
+          std::cout << "    async handler is enabled" << std::endl;
+        if (ASYNC_SNAPSHOT_CREATION)
+          std::cout << "    snapshots are created asynchronously" << std::endl;
+      }
+
+      init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION));
+    }
   }
 
 }  // namespace app

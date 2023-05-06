@@ -7,7 +7,7 @@ test() {
   ./target/app --help
   ./target/test --help
   { # terminal 1
-    ./target/app
+    ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 1
   }
   { # terminal 2
     ./target/test

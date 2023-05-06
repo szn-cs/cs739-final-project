@@ -137,6 +137,7 @@ namespace utility::parse {
         generic.add_options()("help,h", "CMD options list");
         generic.add_options()("config", po::value<std::string>(), "Configuration file");
         generic.add_options()("mode,m", po::value<EnumOption<Mode>>(), "Mode of execution: either `app` for main executable; or for tests/user executable: `test`, `benchmark`, `interactive` ");
+        generic.add_options()("flag.debug,g", po::bool_switch(&config->flag.debug)->default_value(false), "Debug flag");
 
         cmd_options.add(generic);
       }
@@ -191,13 +192,17 @@ namespace utility::parse {
         app.add_options()("port,p", po::value<unsigned short>(&config->port)->default_value(8000), "Port of RPC service");
         app.add_options()("directory,d", po::value<std::string>(&config->directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp/server")), "Directory of data");
         app.add_options()("cluster.address,a", make_value<std::vector<std::string>>(&config->cluster), "Addresses (incl. ports) of cluster participants <address:port>");
-        app.add_options()("flag.debug,g", po::bool_switch(&config->flag.debug)->default_value(false), "Debug flag");
         app.add_options()("flag.leader", po::bool_switch(&config->flag.leader)->default_value(false), "testing: leader flag");
         app.add_options()("flag.local_ubuntu", po::bool_switch(&config->flag.local_ubuntu)->default_value(false), "indicate if running locally on ubuntu, in which case the machine ip is 127.0.0.1");
         app.add_options()("flag.timeout", po::value<int>(&config->flag.timeout)->default_value(1000), "Timeout in ms");
         app.add_options()("flag.failrate", po::value<int>(&config->flag.failrate)->default_value(0), "Failrate: percentile");
         app.add_options()("flag.latency", po::bool_switch(&config->flag.latency)->default_value(false), "latency flag: allow for random latency in local machine testing");
         app.add_options()("flag.election", po::bool_switch(&config->flag.election)->default_value(true), "latency flag: allow for random latency in local machine testing");
+
+        app.add_options()("consensus.server-id", po::value<int>(&config->consensus.serverId)->default_value(1), "(check NuRaft docs for details)");
+        app.add_options()("consensus.endpoint", po::value<std::string>(&config->consensus.endpoint)->default_value("localhost:9000"), "<address:port> endpoint of TCP/IP consensus implementation (NuRaft)");
+        app.add_options()("consensus.async-snapshot-creation", po::bool_switch(&config->consensus.asyncSnapshotCreation)->default_value(false), "(check NuRaft docs for details)");
+        app.add_options()("consensus.async-handler", po::bool_switch(&config->consensus.asyncHandler)->default_value(false), "(check NuRaft docs for details)");
 
         // TODO:
         // ss << "      --async-handler: use async type handler." << std::endl;
@@ -227,7 +232,35 @@ namespace utility::parse {
 
       po::notify(variables);
 
-      if (config->mode == Mode::EMPTY) config->mode = Mode::APP;
+      {
+        if (config->mode == Mode::EMPTY) config->mode = Mode::APP;
+
+        if (config->consensus.serverId < 1) {
+          std::cerr << red << "wrong server id (should be >= 1): " << config->consensus.serverId
+                    << reset << std::endl;
+          throw(1);
+        }
+
+        // Parse server address and port from consensus.enpoint option.
+        {
+          size_t pos = config->consensus.endpoint.rfind(":");
+          if (pos == std::string::npos) {
+            std::cerr << red << "wrong endpoint: " << config->consensus.endpoint << reset << std::endl;
+            throw(1);
+          }
+
+          int port = atoi(config->consensus.endpoint.substr(pos + 1).c_str());
+          if (port < 1000) {
+            std::cerr << red << "wrong port (should be >= 1000): " << port << reset << std::endl;
+            throw(1);
+          }
+
+          std::string address = config->consensus.endpoint.substr(0, pos);
+
+          config->consensus.port = port;
+          config->consensus.address = address;
+        }
+      }
 
       if (variables.count("help"))
         return [cmd_options]() {
@@ -235,11 +268,16 @@ namespace utility::parse {
                     << reset << cmd_options << '\n'
                     << endl;
         };
-
     } catch (const po::error& ex) {
       std::cerr << red << ex.what() << reset << "\n\n";
       std::cout << "(Check options with --help flag.)\n"
                 << endl;
+
+      exit(1);
+    } catch (int e) {
+      std::cerr << grey << "\n\n";
+      std::cout << "(Check options with --help flag.)\n"
+                << reset << endl;
 
       exit(1);
     }
@@ -302,7 +340,9 @@ namespace utility::parse {
         po::notify(variables);
       }
 
-      if (config->mode == Mode::EMPTY) config->mode = Mode::TEST;
+      {
+        if (config->mode == Mode::EMPTY) config->mode = Mode::TEST;
+      }
 
       if (variables.count("help"))
         return [cmd_options]() {

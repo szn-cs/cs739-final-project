@@ -126,26 +126,6 @@ namespace consensus {
               << "state machine value: " << get_sm()->get_current_value() << std::endl;
   }
 
-  void check_additional_flags(int argc, char** argv) {
-    for (int ii = 1; ii < argc; ++ii) {
-      if (strcmp(argv[ii], "--async-handler") == 0) {
-        CALL_TYPE = raft_params::async_handler;
-      } else if (strcmp(argv[ii], "--async-snapshot-creation") == 0) {
-        ASYNC_SNAPSHOT_CREATION = true;
-      }
-    }
-  }
-
-  void calc_usage(int argc, char** argv) {
-    std::stringstream ss;
-    ss << "Usage: \n";
-    ss << "    " << argv[0] << " <server id> <IP address and port> [<options>]";
-    ss << std::endl;
-
-    std::cout << ss.str();
-    exit(0);
-  }
-
   void usage(int argc, char** argv) {
     std::stringstream ss;
     ss << "Usage: \n";
@@ -154,33 +134,6 @@ namespace consensus {
 
     std::cout << ss.str();
     exit(0);
-  }
-
-  void set_server_info(int argc, char** argv) {
-    // Get server ID.
-    stuff.server_id_ = atoi(argv[1]);
-    if (stuff.server_id_ < 1) {
-      std::cerr << "wrong server id (should be >= 1): " << stuff.server_id_
-                << std::endl;
-      usage(argc, argv);
-    }
-
-    // Get server address and port.
-    std::string str = argv[2];
-    size_t pos = str.rfind(":");
-    if (pos == std::string::npos) {
-      std::cerr << "wrong endpoint: " << str << std::endl;
-      usage(argc, argv);
-    }
-
-    stuff.port_ = atoi(str.substr(pos + 1).c_str());
-    if (stuff.port_ < 1000) {
-      std::cerr << "wrong port (should be >= 1000): " << stuff.port_ << std::endl;
-      usage(argc, argv);
-    }
-
-    stuff.addr_ = str.substr(0, pos);
-    stuff.endpoint_ = stuff.addr_ + ":" + std::to_string(stuff.port_);
   }
 
   void init_raft(ptr<state_machine> sm_instance) {

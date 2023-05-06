@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
   }
 
   auto m_app = [&argc, &argv, &variables, &config]() {
-    cout << termcolor::grey << "mode = APP" << termcolor::reset << endl;
+    cout << grey << "mode = APP" << reset << endl;
 
     // Initialize Cluster data & Node instances
     app::initializeStaticInstance(config, config->cluster);
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     // RPC services on separate threads
     utility::parse::Address a = config->getAddress<app::Service::NODE>();
     std::thread t(utility::server::run_gRPC_server<rpc::RPC>, a);
-    std::cout << termcolor::blue << "⚡ service: " << a.toString() << termcolor::reset << std::endl;
+    std::cout << blue << "⚡ service: " << a.toString() << reset << std::endl;
 
     // call app functionality
     // TODO:
@@ -42,37 +42,13 @@ int main(int argc, char* argv[]) {
     t.join();
   };
 
-  auto m_consensus = [&argc, &argv, &variables, &config]() {
-    using namespace consensus;
-
-    if (argc < 3) calc_usage(argc, argv);
-
-    set_server_info(argc, argv);
-    check_additional_flags(argc, argv);
-
-    std::cout << "    Server ID:    " << stuff.server_id_ << std::endl;
-    std::cout << "    Endpoint:     " << stuff.endpoint_ << std::endl;
-    if (CALL_TYPE == raft_params::async_handler)
-      std::cout << "    async handler is enabled" << std::endl;
-    if (ASYNC_SNAPSHOT_CREATION)
-      std::cout << "    snapshots are created asynchronously" << std::endl;
-
-    init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION));
-
-    // prev: run prompt::loop()
-  };
-
   switch (config->mode) {
-    case utility::parse::Mode::CONSENSUS:
-      m_consensus();
-      break;
-
     case utility::parse::Mode::APP:
     default:
       m_app();
       break;
   }
 
-  cout << termcolor::grey << utility::getClockTime() << "Node exited" << termcolor::reset << endl;
+  cout << grey << utility::getClockTime() << "Node exited" << reset << endl;
   return 0;
 }

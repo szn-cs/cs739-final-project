@@ -2465,7 +2465,7 @@ namespace consensus {
 
   using raft_result = cmd_result<ptr<buffer>>;
 
-  struct server_stuff {
+  struct server_stuff { 
     server_stuff()
         : server_id_(1), addr_("localhost"), port_(25000), raft_logger_(nullptr), sm_(nullptr), smgr_(nullptr), raft_instance_(nullptr) {}
 
@@ -2505,10 +2505,7 @@ namespace consensus {
   };
   static server_stuff stuff;
 
-  void check_additional_flags(int argc, char** argv);
-  void calc_usage(int argc, char** argv);  // print usage information
   void usage(int argc, char** argv);
-  void set_server_info(int argc, char** argv);
   void init_raft(ptr<state_machine> sm_instance);
   void handle_result(ptr<_TestSuite::TestSuite::Timer> timer, raft_result& result, ptr<std::exception>& err);
   void append_log(const std::string& cmd, const std::vector<std::string>& tokens);

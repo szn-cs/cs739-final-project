@@ -115,6 +115,16 @@ namespace utility::parse {
       int failrate;
     } flag;
 
+    // NuRaft options
+    struct consensus {
+      int serverId;
+      std::string endpoint;
+      int port;             // parsed from endpoint
+      std::string address;  // parsed from endpoint
+      bool asyncSnapshotCreation;
+      bool asyncHandler;
+    } consensus;
+
     // TODO: if needed
     // set acceptor list -> vector<pair<int, std::string>>; pairs of server IDs with their addresses
     // set leader -> pair<int, string>
