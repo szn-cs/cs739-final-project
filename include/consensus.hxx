@@ -2,6 +2,7 @@
 
 #include "library.h"
 #include "rpc.h"
+#include "struct.h"
 #include "utility.h"
 
 /*
@@ -131,7 +132,7 @@ namespace nuraft {
   |____/ |_/_/   \_\_| |_____| |_|  |_/_/   \_\____|_| |_|___|_| \_|_____|
 */
 
-namespace consensus {
+namespace app::consensus {
   using namespace nuraft;
 
   class consensus_state_machine : public state_machine {
@@ -382,7 +383,7 @@ namespace consensus {
     bool async_snapshot_;
   };
 
-};  // namespace consensus
+};  // namespace app::consensus
 
 /*
    ___ _   _   __  __ _____ __  __  ___  ______   __  ____ _____  _  _____ _____   __  __    _    _   _    _    ____ _____ ____
@@ -408,6 +409,16 @@ namespace nuraft {
     ~inmem_state_mgr() {}
 
     ptr<cluster_config> load_config() {
+      ptr<srv_config> peer_srv_config_;
+
+      // cluster servers during initialization (preventing choosing leaders before setting quorum sized)
+      for (const auto& [endpoint, Node_ptr] : *(app::State::memberList)) {
+        utility::parse::Address a = utility::parse::make_address(Node_ptr->endpoint.address);
+        std::cout << " load_config server id " << a.port << "    endpoint:    " << Node_ptr->endpoint.address << std::endl;
+        peer_srv_config_ = cs_new<srv_config>(a.port, Node_ptr->endpoint.address);
+        saved_config_->get_servers().push_back(peer_srv_config_);
+      }
+
       // Just return in-memory data in this example.
       // May require reading from disk here, if it has been written to disk.
       return saved_config_;
@@ -465,7 +476,7 @@ namespace nuraft {
   |____/|_____|____/ \___/ \____| |_____\___/ \____|\____|_____|_| \_\
 */
 
-namespace consensus::_logger::_backtrace {
+namespace app::consensus::_logger::_backtrace {
   // LCOV_EXCL_START
 
 #define SIZE_T_UNUSED size_t __attribute__((unused))
@@ -619,7 +630,7 @@ namespace consensus::_logger::_backtrace {
   }
 
   // LCOV_EXCL_STOP
-}  // namespace consensus::_logger::_backtrace
+}  // namespace app::consensus::_logger::_backtrace
 
 #ifndef _CLM_DEFINED
 #define _CLM_DEFINED (1)
@@ -675,8 +686,8 @@ namespace consensus::_logger::_backtrace {
 
 #endif
 
-namespace consensus::_logger {
-  using namespace consensus::_logger::_backtrace;
+namespace app::consensus::_logger {
+  using namespace app::consensus::_logger::_backtrace;
 
 // To suppress false alarms by thread sanitizer,
 // add -DSUPPRESS_TSAN_FALSE_ALARMS=1 flag to CXXFLAGS.
@@ -1088,9 +1099,9 @@ namespace consensus::_logger {
     // Assume that only one thread is updating this.
     std::vector<RawStackInfo> crashDumpThreadStacks;
   };
-}  // namespace consensus::_logger
+}  // namespace app::consensus::_logger
 
-namespace consensus::_logger {
+namespace app::consensus::_logger {
   using namespace nuraft;
 
   /**
@@ -1143,7 +1154,7 @@ namespace consensus::_logger {
    private:
     SimpleLogger* my_log_;
   };
-}  // namespace consensus::_logger
+}  // namespace app::consensus::_logger
 
 /* TODO: MOVE TO utility.cc
    _   _ _____ ___ _     ___ _______   __
@@ -1153,7 +1164,7 @@ namespace consensus::_logger {
    \___/  |_| |___|_____|___| |_|   |_|
 */
 
-namespace consensus::_TestSuite {
+namespace app::consensus::_TestSuite {
 
 #define _CLM_DEFINED (1)
 
@@ -2445,7 +2456,7 @@ namespace consensus::_TestSuite {
 #define TEST_SUITE_CLEANUP_PATH() \
   TestSuite::clearTestFile(_ts_auto_prefiix_, TestSuite::END_OF_TEST);
 
-}  // namespace consensus::_TestSuite
+}  // namespace app::consensus::_TestSuite
 
 /*
     ____ ___  _   _ ____  _____ _   _ ____  _   _ ____    ___ _   _ ___ _____ ___    _    _     ___ _____   _  _____ ___ ___  _   _
@@ -2455,7 +2466,7 @@ namespace consensus::_TestSuite {
    \____\___/|_| \_|____/|_____|_| \_|____/ \___/|____/  |___|_| \_|___| |_| |___/_/   \_\_____|___/____/_/   \_\_| |___\___/|_| \_|
 */
 
-namespace consensus {
+namespace app::consensus {
   using namespace nuraft;
 
   static raft_params::return_method_type CALL_TYPE = raft_params::blocking;
@@ -2465,47 +2476,6 @@ namespace consensus {
 
   using raft_result = cmd_result<ptr<buffer>>;
 
-  struct server_stuff {
-    server_stuff()
-        : server_id_(1), addr_("localhost"), port_(25000), raft_logger_(nullptr), sm_(nullptr), smgr_(nullptr), raft_instance_(nullptr) {}
-
-    void reset() {
-      raft_logger_.reset();
-      sm_.reset();
-      smgr_.reset();
-      raft_instance_.reset();
-    }
-
-    // Server ID.
-    int server_id_;
-
-    // Server address.
-    std::string addr_;
-
-    // Server port.
-    int port_;
-
-    // Endpoint: `<addr>:<port>`.
-    std::string endpoint_;
-
-    // Logger.
-    ptr<logger> raft_logger_;
-
-    // State machine.
-    ptr<state_machine> sm_;
-
-    // State manager.
-    ptr<state_mgr> smgr_;
-
-    // Raft launcher.
-    raft_launcher launcher_;
-
-    // Raft server instance.
-    ptr<raft_server> raft_instance_;
-  };
-  static server_stuff stuff;
-
-  void usage(int argc, char** argv);
   void init_raft(ptr<state_machine> sm_instance, std::string log_path);
   void handle_result(ptr<_TestSuite::TestSuite::Timer> timer, raft_result& result, ptr<std::exception>& err);
   void append_log(const std::string& cmd, const std::vector<std::string>& tokens);
@@ -2513,4 +2483,4 @@ namespace consensus {
   void print_status();
   void server_list();
 
-}  // namespace consensus
+}  // namespace app::consensus

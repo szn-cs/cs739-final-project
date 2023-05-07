@@ -145,6 +145,7 @@ namespace app {
   std::shared_ptr<utility::parse::Config> State::config = nullptr;
   std::shared_ptr<Node> State::currentNode = nullptr;
   std::shared_ptr<std::string> State::master = nullptr;
+  app::consensus::server_stuff State::stuff = app::consensus::server_stuff();
 
   // This method does initializing of information common to both servers and clients
   void initializeStaticInstance(std::shared_ptr<utility::parse::Config> config, std::vector<std::string> addressList) {
@@ -166,13 +167,13 @@ namespace app {
     }
 
     {
-      using namespace consensus;
+      using namespace app::consensus;
 
-      {
-        stuff.server_id_ = config->consensus.serverId;
-        stuff.port_ = config->consensus.port;
-        stuff.addr_ = config->consensus.address;
-        stuff.endpoint_ = stuff.addr_ + ":" + std::to_string(stuff.port_);
+      {  // initialize static/object datastructures
+        app::State::stuff.server_id_ = config->consensus.serverId;
+        app::State::stuff.port_ = config->consensus.port;
+        app::State::stuff.addr_ = config->consensus.address;
+        app::State::stuff.endpoint_ = app::State::stuff.addr_ + ":" + std::to_string(app::State::stuff.port_);
 
         if (config->consensus.asyncSnapshotCreation) {
           CALL_TYPE = raft_params::async_handler;
@@ -184,11 +185,11 @@ namespace app {
   }
 
   void init_consensus() {
-    using namespace consensus;
+    using namespace app::consensus;
 
     if (app::State::config->flag.debug) {
-      std::cout << cyan << "    Server ID:    " << stuff.server_id_ << std::endl;
-      std::cout << "    Endpoint:     " << stuff.endpoint_ << std::endl;
+      std::cout << cyan << "    Server ID:    " << app::State::stuff.server_id_ << std::endl;
+      std::cout << "    Endpoint:     " << app::State::stuff.endpoint_ << std::endl;
       if (CALL_TYPE == raft_params::async_handler)
         std::cout << "    async handler is enabled" << std::endl;
       if (ASYNC_SNAPSHOT_CREATION)
@@ -202,10 +203,12 @@ namespace app {
       server_list();
     }
     {
+      // Example: add sever dynamically to NuRaft
       const std::vector<std::string>& tokens = {"2", "localhost:9002"};
-      add_server(tokens);
+      // add_server(tokens);
     }
     {
+      // Example: commit a command value to consensus log
       const std::vector<std::string>& tokens = {"+123"};
       append_log("+", tokens);
     }

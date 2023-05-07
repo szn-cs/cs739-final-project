@@ -46,8 +46,8 @@ int main(int argc, char* argv[]) {
 
     {  // terminate app
       // gracefully terminate NuRaft & ASIO used
-      consensus::stuff.launcher_.shutdown(5);
-      consensus::stuff.reset();
+      app::State::stuff.launcher_.shutdown(5);
+      app::State::stuff.reset();
     }
   };
 

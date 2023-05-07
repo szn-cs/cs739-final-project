@@ -7,7 +7,13 @@ test() {
   ./target/app --help
   ./target/test --help
   { # terminal 1
-    ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 1
+    ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 9000 --config ./3_node_cluster.ini
+  }
+  {
+    ./target/app -g --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./3_node_cluster.ini
+  }
+  {
+    ./target/app -g --consensus.endpoint localhost:9002 --consensus.server-id 9002 --config ./3_node_cluster.ini
   }
   { # terminal 2
     ./target/test

@@ -29,7 +29,7 @@ namespace rpc {
     std::pair<grpc::Status, int64_t> keep_alive(std::string, chrono::system_clock::time_point);                                     // Used for communicating with a known master
     std::pair<grpc::Status, int64_t> keep_alive(std::string, std::map<std::string, LockStatus>, chrono::system_clock::time_point);  // Used when in jeopardy
 
-    std::string address;
+    std::string address;  // <host:port>
     std::shared_ptr<interface::RPC::Stub> stub;
   };
 
