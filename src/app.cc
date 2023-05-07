@@ -198,10 +198,6 @@ namespace app {
 
     init_raft(cs_new<consensus_state_machine>(ASYNC_SNAPSHOT_CREATION), "./tmp/");
 
-    if (app::State::config->flag.debug) {
-      print_status();
-      server_list();
-    }
     {
       // Example: add sever dynamically to NuRaft
       const std::vector<std::string>& tokens = {"2", "localhost:9002"};
@@ -209,8 +205,15 @@ namespace app {
     }
     {
       // Example: commit a command value to consensus log
-      const std::vector<std::string>& tokens = {"+123"};
-      append_log("+", tokens);
+      while (true) {
+        if (app::State::config->flag.debug) {
+          print_status();
+          server_list();
+        }
+        sleep(2);
+        const std::vector<std::string>& tokens = {"+123"};
+        append_log("+", tokens);
+      }
     }
   }
 
