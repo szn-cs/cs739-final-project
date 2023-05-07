@@ -3,11 +3,14 @@
 # on an isntance of UBUNTU 20.04 with Temporary Filesystem Size of 40 GB mounted to /root
 # copy over binaries from ./target/release
 
-test() {
+usage_example1() {
   ./target/app --help
   ./target/test --help
-  { # terminal 1
+  # terminals for cluster nodes:
+  {
     ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 9000 --config ./3_node_cluster.ini
+    # equivalent to:
+    ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 9000 --cluster.address localhost:9001 --cluster.address localhost:9002
   }
   {
     ./target/app -g --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./3_node_cluster.ini
@@ -15,12 +18,18 @@ test() {
   {
     ./target/app -g --consensus.endpoint localhost:9002 --consensus.server-id 9002 --config ./3_node_cluster.ini
   }
-  { # terminal 2
-    ./target/test
+
+  # terminal for user/client side
+  {
+    ./target/test -g --mode interactive
+    # or
+    ./target/test -g --mode test --command test_maintain_session
+    # or
+    ./target/test -g --mode benchmark
   }
 }
 
-test_example() {
+usage_example2() {
   source ./script/setenv.sh
   # SERVER_ADDRESS=c220g5-110912.wisc.cloudlab.us:50051
 

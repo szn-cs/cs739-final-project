@@ -3,11 +3,12 @@
 // interactive command prompt for testing the client
 namespace interactive {
 
-  bool do_cmd(const std::vector<std::string>& tokens) {  // TODO: call functionality form Chubby server/client
+  bool do_cmd(const std::vector<std::string>& tokens) {
     if (!tokens.size()) return true;
 
     const std::string& cmd = tokens[0];
 
+    // TODO: call functionality from Chubby server/client
     if (cmd == "q" || cmd == "exit") {
       return false;
     } else if (cmd[0] == '+' || cmd[0] == '-' || cmd[0] == '*' || cmd[0] == '/') {
@@ -15,9 +16,9 @@ namespace interactive {
     } else if (cmd == "add") {
       // connect to server
     } else if (cmd == "st" || cmd == "stat") {
-      // print information about session, cluster, consensus, handles, locks, etc.
+      // print information about session, handles, locks, state machine files etc.
     } else if (cmd == "ls" || cmd == "list") {
-      // list Chubby servers
+      // list Chubby servers & cluster
     } else if (cmd == "h" || cmd == "help") {
       help();
     }

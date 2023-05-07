@@ -1,5 +1,32 @@
 #include "./common.h"
 
+void example_usage_of_consensus() {
+  {  // EXAMPLE: add sever dynamically to NuRaft
+    using namespace app::consensus;
+
+    // const std::vector<std::string>& tokens = {"2", "localhost:9002"};
+    // add_server(tokens);
+  }
+
+  {  // EXAMPLE: commit a command value to consensus log every 2 seconds and print cluster state
+    using namespace app::consensus;
+
+    while (true) {
+      if (app::State::config->flag.debug) {
+        print_status();
+        server_list();
+      }
+
+      cout << grey << "⏳ wait 2s" << reset << endl;
+      sleep(2);
+
+      cout << on_bright_cyan << "🧬 Trying to replicate command `+123`" << reset << endl;
+      const std::vector<std::string>& tokens = {"+123"};
+      append_log("+", tokens);
+    }
+  }
+}
+
 /**
  * initialize configurations, run RPC servers, and start consensus coordination
  */
@@ -31,6 +58,9 @@ int main(int argc, char* argv[]) {
     // run NuRaft stuff
     app::init_consensus();
 
+    // EXAMPLE of NuRaft consensus
+    example_usage_of_consensus();
+
     // Initialize the server data structures
     app::server::init_server_info();
 
@@ -41,6 +71,7 @@ int main(int argc, char* argv[]) {
 
     // call app functionality
     // TODO:
+    // start a lock service server - expose that to the client and accept requests
 
     t.join();
 

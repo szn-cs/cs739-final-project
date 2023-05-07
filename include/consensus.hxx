@@ -414,8 +414,11 @@ namespace nuraft {
       // cluster servers during initialization (preventing choosing leaders before setting quorum sized)
       for (const auto& [endpoint, Node_ptr] : *(app::State::memberList)) {
         utility::parse::Address a = utility::parse::make_address(Node_ptr->endpoint.address);
-        std::cout << " load_config server id " << a.port << "    endpoint:    " << Node_ptr->endpoint.address << std::endl;
-        peer_srv_config_ = cs_new<srv_config>(a.port, Node_ptr->endpoint.address);
+        int id = a.port;
+        if (id == app::State::stuff.server_id_)
+          continue;  //skip self node
+        std::cout << " load_config server id " << id << "    endpoint:    " << Node_ptr->endpoint.address << std::endl;
+        peer_srv_config_ = cs_new<srv_config>(id, Node_ptr->endpoint.address);
         saved_config_->get_servers().push_back(peer_srv_config_);
       }
 

@@ -298,10 +298,10 @@ namespace utility::parse {
       {
         po::options_description test("--mode test");
 
-        test.add_options()("command,c", po::value<std::string>()->default_value("get"), "command");
-        test.add_options()("key,k", po::value<std::string>()->default_value("default-key"), "key");
-        test.add_options()("value,v", po::value<std::string>()->default_value("default-value"), "value");
-        test.add_options()("target,t", po::value<std::string>()->default_value("127.0.1.1:8000"), "target address to send to");
+        test.add_options()("command,c", po::value<std::string>()->default_value("get"), "command or test function name to run (check implementation to see how it used)");
+        test.add_options()("key,k", po::value<std::string>()->default_value("default-key"), "key (optional: test specific)");
+        test.add_options()("value,v", po::value<std::string>()->default_value("default-value"), "value (optional: test specific)");
+        test.add_options()("target,t", po::value<std::string>()->default_value("localhost:8000"), "target address to send to (optional: test specific)");
 
         cmd_options.add(test);   // set options allowed on command line
         file_options.add(test);  // set options allowed in config file

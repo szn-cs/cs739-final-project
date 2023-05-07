@@ -26,7 +26,7 @@ namespace app::consensus {
     }
     ptr<buffer> buf = result.get();
     uint64_t ret_value = buf->get_ulong();
-    std::cout << "succeeded, " << _TestSuite::TestSuite::usToString(timer->getTimeUs())
+    std::cout << on_bright_green << "succeeded" << reset << ", " << _TestSuite::TestSuite::usToString(timer->getTimeUs())
               << ", return value: " << ret_value
               << ", state machine value: " << get_sm()->get_current_value() << std::endl;
   }
@@ -37,6 +37,7 @@ namespace app::consensus {
     consensus_state_machine::op_type op = consensus_state_machine::ADD;
 
     switch (cmd_char) {
+      // TODO: changing values of files
       case '+':
         op = consensus_state_machine::ADD;
         break;
@@ -69,7 +70,7 @@ namespace app::consensus {
 
     if (!ret->get_accepted()) {
       // Log append rejected, usually because this node is not a leader.
-      std::cout << "failed to replicate: " << ret->get_result_code() << ", "
+      std::cout << on_bright_red << "failed" << reset << " to replicate: " << ret->get_result_code() << ", "
                 << _TestSuite::TestSuite::usToString(timer->getTimeUs()) << std::endl;
       return;
     }
@@ -215,23 +216,25 @@ namespace app::consensus {
                       ? app::State::stuff.sm_->last_snapshot()->get_last_log_term()
                       : 0)
               << std::endl
-              << "state machine value: " << get_sm()->get_current_value() << reset << std::endl;
+              << on_bright_yellow << "💾 state machine value = " << get_sm()->get_current_value() << reset << std::endl;
   }
 
   void server_list() {
     std::vector<ptr<srv_config>> configs;
-    app::State::stuff.raft_instance_->get_srv_config_all(configs);
+    VariadicTable<int, std::string, std::string> table({"id", "address", "node type"}, 2);
 
     int leader_id = app::State::stuff.raft_instance_->get_leader();
+    app::State::stuff.raft_instance_->get_srv_config_all(configs);
 
     for (auto& entry : configs) {
       ptr<srv_config>& srv = entry;
-      std::cout << cyan << "server id " << srv->get_id() << ": " << srv->get_endpoint();
-      if (srv->get_id() == leader_id) {
-        std::cout << " (LEADER)";
-      }
-      std::cout << reset << std::endl;
+      table.addRow(srv->get_id(), srv->get_endpoint(), (srv->get_id() == leader_id) ? "leader ⭐ " : "follower");
     }
+
+    cout << grey << "\n Cluster list:"
+         << reset << endl;
+    table.print(std::cout);
+    cout << endl;
   }
 
 };  // namespace app::consensus

@@ -5,6 +5,12 @@ service RPC {
     rpc ping(Empty) returns (Empty) {};
     rpc init_session(InitSessionRequest) returns (Empty) {};
     rpc keep_alive(KeepAliveRequest) returns (KeepAliveResponse) {};
+
+    // TODO: interface for user using lock service
+    // aquire lock 
+    // commands for fs changes 
+    // release lock
+    // extend lock session
 }
 
 enum LockStatus {
