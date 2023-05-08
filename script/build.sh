@@ -1,6 +1,6 @@
 #!/bin/bash
-
 # run using $` (source ./script/build.sh && build) `
+
 build() {
   source ./script/setenv.sh
 

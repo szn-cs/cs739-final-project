@@ -1,4 +1,5 @@
 #!/bin/bash
+# run using $` (source ./script/provision_local.sh) `
 
 ## Use only if `builtin-baseline` exist in vcpkg.json && biuld fails;  or use when build failure caused by old version of `vcpkg` submodule
 function fix_vcpkg() {
