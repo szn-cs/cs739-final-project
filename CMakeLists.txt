@@ -15,8 +15,14 @@ set(SOURCE_FOLDER "${PROJECT_SOURCE_DIR}/src")
 
 #-------------------------------------------
 
-include_directories(${VCPKG_INSTALLED_DIR}/x64-linux/include/openssl)
-include_directories(${VCPKG_INSTALLED_DIR}/x64-linux/include)
+IF(APPLE)
+  include_directories(${VCPKG_INSTALLED_DIR}/x64-osx/include/openssl)
+  include_directories(${VCPKG_INSTALLED_DIR}/x64-osx/include)
+ELSE()
+  include_directories(${VCPKG_INSTALLED_DIR}/x64-linux/include/openssl)
+  include_directories(${VCPKG_INSTALLED_DIR}/x64-linux/include)
+ENDIF()
+
 
 include_directories(${BOOST_INCLUDE_DIRS})
 
