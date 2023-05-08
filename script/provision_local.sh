@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## Use only if `builtin-baseline` exist in vcpkg.json && biuld fails
+## Use only if `builtin-baseline` exist in vcpkg.json && biuld fails;  or use when build failure caused by old version of `vcpkg` submodule
 function fix_vcpkg() {
   WARNING='\033[93m'
   BOLD='\033[1m'
@@ -32,9 +32,12 @@ workspaceFolder=$PWD
 chmod +x ${workspaceFolder}/script/*
 
 # download corresponding submodules
-git restore dependency/vcpkg --recurse-submodules
-git submodule update --init --remote
-git submodule update --init --recursive
+git submodule foreach git reset --hard
+git submodule sync --recursive
+git submodule update --init --remote --force --checkout
+
+# restore the dependency submodule if a github repo cloned instead (sometimes required to get the latest repo)
+# git restore dependency/vcpkg --recurse-submodules
 
 ## provision system dependencies
 DEPENDENCIES=("build-essential" "autoconf" "libtool" "pkg-config" "gcc" "cmake" "openssl" "libssl-dev" "libz-dev")

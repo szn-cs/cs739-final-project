@@ -83,4 +83,4 @@ bin/
 
 # cpp vcpkg manager
 vcpkg_installed/
-dependency/*
+# dependency/*
