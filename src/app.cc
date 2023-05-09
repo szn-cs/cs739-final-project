@@ -135,6 +135,121 @@ namespace rpc {
 
 }  // namespace rpc
 
+namespace rpc {
+  /************************ open_lock rpcs ************************/
+  grpc::Status RPC::open_lock(ServerContext* context, const interface::OpenLockRequest* request, interface::Empty* response) {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+
+    return app::server::open_lock(request->client_id(), request->file_path());
+  }
+
+  grpc::Status Endpoint::open_lock(std::string client_id, std::string file_path){
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+
+    ClientContext context;
+    OpenLockRequest request;
+    Empty response;
+    request.set_client_id(client_id);
+    request.set_file_path(file_path);
+
+    grpc::Status status = this->stub->open_lock(&context, request, &response);
+
+    return status;
+  }
+  
+}
+
+namespace rpc {
+  /************************ close_lock rpcs ************************/
+  grpc::Status RPC::delete_lock(ServerContext* context, const interface::DeleteLockRequest* request, interface::Empty* response) {
+     if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+    
+    return app::server::delete_lock(request->client_id(), request->file_path());
+  }
+
+  grpc::Status Endpoint::delete_lock(std::string client_id, std::string file_path){
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+
+    ClientContext context;
+    DeleteLockRequest request;
+    Empty response;
+    request.set_client_id(client_id);
+    request.set_file_path(file_path);
+
+    grpc::Status status = this->stub->delete_lock(&context, request, &response);
+
+    return status;
+  }
+}
+
+namespace rpc {
+  /************************ acquire_lock rpcs ************************/
+  grpc::Status RPC::acquire_lock(ServerContext* context, const interface::AcquireLockRequest* request, interface::AcquireLockResponse* response) {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+    
+    return Status::OK;
+  }
+}
+
+namespace rpc {
+  /************************ release_lock rpcs ************************/
+  grpc::Status RPC::release_lock(ServerContext* context, const interface::ReleaseLockRequest* request, interface::Empty* response) {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+    
+    return Status::OK;
+  }
+}
+
+namespace rpc {
+  /************************ read rpcs ************************/
+  grpc::Status RPC::read(ServerContext* context, const interface::ReadRequest* request, interface::ReadResponse* response) {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+    
+    return Status::OK;
+  }
+}
+
+namespace rpc {
+  /************************ write rpcs ************************/
+  grpc::Status RPC::write(ServerContext* context, const interface::WriteRequest* request, interface::WriteResponse* response) {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+    
+    return Status::OK;
+  }
+}
+
 /**
  * @brief Setup/initialization for a server
  * 
@@ -307,6 +422,7 @@ namespace app::server {
   }
 
   void end_session(std::shared_ptr<Session> session) {
+
     session->terminated = true;
 
     // Release all locks
@@ -332,6 +448,79 @@ namespace app::server {
 
     // Return so that we can send response from the rpc service
     return session->lease_length.count();
+  }
+
+  grpc::Status open_lock(std::string client_id, std::string file_path){
+    if (info::sessions->find(client_id) == info::sessions->end()) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a session established with this server." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client does not have an existing session.");
+    }
+
+    /* TODO:: The below stuff once we get raft configged correctly */
+    // Check if lock exists in persistent store
+    // raft.get_log(file_path) ??
+
+    // if log exists, return OK
+
+    // if log does not exist, create it within persistent memory
+    // raft.set(file_path, "");
+    
+    // Add lock to in memory data structures 
+    std::shared_ptr<Lock> lock = std::make_shared<Lock>();
+    lock->path = file_path;
+    lock->content = "";
+    lock->owners = std::make_shared<std::map<std::string, bool>>();
+    lock->status = LockStatus::FREE;
+    std::pair<std::string, std::shared_ptr<Lock>> entry = std::make_pair(file_path, lock);
+
+    info::locks->insert(entry);
+    info::sessions->at(client_id)->locks->insert(entry);
+
+    return Status::OK;
+  }
+
+  grpc::Status delete_lock(std::string client_id, std::string file_path){
+    if (info::sessions->find(client_id) == info::sessions->end()) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a session established with this server." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client does not have an existing session.");
+    }
+
+    // Check if this client is holding the lock for this file
+    std::shared_ptr<Session> session = info::sessions->at(client_id);
+    if(session->locks->find(file_path) == session->locks->end()){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a lock under path " << file_path << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client does not hold this lock.");
+    }
+
+    // Ensure the client is holding the lock in exclusive mode
+    if(session->locks->at(file_path)->status != LockStatus::EXCLUSIVE){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a lock under path " << file_path << " in exclusive mode." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client does not hold this lock in exclusive mode.");
+    }
+
+    /* TODO:: The below stuff once we get raft configged correctly */
+    // Check if lock exists in persistent store
+    // raft.get_log(file_path) ??
+
+    // if log does not exist, return an error
+    // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in the raft log.");
+
+    // delete the log from raft storage
+    // raft.delete(file_path) ??
+
+    // Delete the lock from in memory storage
+    session->locks->erase(file_path);
+    info::locks->erase(file_path);
+
+    return Status::OK;
   }
 
 }  // namespace app::server
@@ -419,6 +608,53 @@ namespace app::client {
         info::jeopardy = true;
         return;
       }
+    }
+  }
+
+  bool open_lock(std::string file_path) {
+    if(info::jeopardy){
+      // Here we would wait for either timeout, or for the session to be reestablished
+      if (State::config->flag.debug) {
+          cout << grey << "We are in jeopardy." << reset << endl;
+        }
+    }
+
+    grpc::Status status = info::master->endpoint.open_lock(info::session_id, file_path);
+    
+    if(status.ok()){
+      if (State::config->flag.debug) {
+        cout << green << "Successfully opened lock." << reset << endl;
+      }
+      return true;
+    }else{
+      if (State::config->flag.debug) {
+        cout << red << "Failed to open lock." << reset << endl;
+      }
+      return false;
+    }
+    
+  }
+
+  bool delete_lock(std::string file_path){
+    if(info::jeopardy){
+      // Here we would wait for either timeout, or for the session to be reestablished
+      if (State::config->flag.debug) {
+          cout << grey << "We are in jeopardy." << reset << endl;
+        }
+    }
+
+    grpc::Status status = info::master->endpoint.delete_lock(info::session_id, file_path);
+    
+    if(status.ok()){
+      if (State::config->flag.debug) {
+        cout << green << "Successfully deleted lock." << reset << endl;
+      }
+      return true;
+    }else{
+      if (State::config->flag.debug) {
+        cout << red << "Failed to delete lock." << reset << endl;
+      }
+      return false;
     }
   }
 }  // namespace app::client

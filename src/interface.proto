@@ -5,6 +5,12 @@ service RPC {
     rpc ping(Empty) returns (Empty) {};
     rpc init_session(InitSessionRequest) returns (Empty) {};
     rpc keep_alive(KeepAliveRequest) returns (KeepAliveResponse) {};
+    rpc open_lock(OpenLockRequest) returns (Empty) {};
+    rpc delete_lock(DeleteLockRequest) returns (Empty) {};
+    rpc acquire_lock(AcquireLockRequest) returns (AcquireLockResponse) {};
+    rpc release_lock(ReleaseLockRequest) returns (Empty) {};
+    rpc read(ReadRequest) returns (ReadResponse) {};
+    rpc write(WriteRequest) returns (WriteResponse) {};
 
     // TODO: interface for user using lock service
     // aquire lock 
@@ -35,3 +41,46 @@ message KeepAliveResponse{
   int64 lease_duration = 1;
 }
 
+message OpenLockRequest {
+  string client_id = 1;
+  string file_path = 2;
+}
+
+message DeleteLockRequest {
+  string client_id = 1;
+  string file_path = 2;
+}
+
+message AcquireLockRequest {
+  string client_id = 1;
+  string file_path = 2;
+  LockStatus mode = 3;
+}
+
+message AcquireLockResponse {
+  bool success = 1;
+}
+
+message ReleaseLockRequest {
+  string client_id = 1;
+  string file_path = 2;
+}
+
+message ReadRequest {
+  string client_id = 1;
+  string file_path = 2;
+}
+
+message ReadResponse {
+  string content = 1;
+}
+
+message WriteRequest {
+  string client_id = 1;
+  string file_path = 2;
+  string content = 3;
+}
+
+message WriteResponse {
+  bool success = 1;
+}

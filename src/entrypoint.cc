@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     app::initializeStaticInstance(config, config->cluster);
 
     // run NuRaft stuff
-    app::init_consensus();
+    //app::init_consensus();
 
     // Initialize the server data structures
     app::server::init_server_info();
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     // start a lock service server - expose that to the client and accept requests
 
     // EXAMPLE of NuRaft consensus
-    example_usage_of_consensus();
+    //example_usage_of_consensus();
 
     t.join();
 

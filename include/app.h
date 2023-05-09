@@ -20,6 +20,8 @@ namespace app::server {
   void maintain_session(std::shared_ptr<Session>);
   void end_session(std::shared_ptr<Session>);
   int64_t attempt_extend_session(std::string);  // TODO: Make a version that takes a map of locks, for when in jeopardy
+  grpc::Status open_lock(std::string, std::string);
+  grpc::Status delete_lock(std::string, std::string);
 
 }  // namespace app::server
 
@@ -33,5 +35,7 @@ namespace app::client {
    */
   grpc::Status start_session();
   void maintain_session();
+  bool open_lock(std::string);
+  bool delete_lock(std::string);
 
 }  // namespace app::client
