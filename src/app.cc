@@ -206,8 +206,26 @@ namespace rpc {
       const string n = className + "::" + __func__;
       std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
-    
-    return Status::OK;
+    return app::server::acquire_lock(request->client_id(), request->file_path(), request->mode());
+  }
+
+  grpc::Status Endpoint::acquire_lock(std::string client_id, std::string file_path, LockStatus mode){
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+
+    ClientContext context;
+    AcquireLockRequest request;
+    AcquireLockResponse response;
+    request.set_client_id(client_id);
+    request.set_file_path(file_path);
+    request.set_mode(mode);
+
+    grpc::Status status = this->stub->acquire_lock(&context, request, &response);
+
+    return status;
   }
 }
 
@@ -392,6 +410,7 @@ namespace app::server {
     in >> *(session->block_reply);
 
     while (true) {
+      cout << session->client_id << endl;
       chrono::system_clock::time_point lease_expires = session->start_time + session->lease_length;
       chrono::system_clock::duration time_until_expire = chrono::nanoseconds(0);
 
@@ -534,6 +553,102 @@ namespace app::server {
     return Status::OK;
   }
 
+  grpc::Status acquire_lock(std::string client_id, std::string file_path, LockStatus mode){
+    if (info::sessions->find(client_id) == info::sessions->end()) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a session established with this server." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client does not have an existing session.");
+    }
+    std::shared_ptr<Session> session = info::sessions->at(client_id);
+
+    if(mode != LockStatus::EXCLUSIVE && mode != LockStatus::SHARED){
+      return grpc::Status(StatusCode::ABORTED, "Can't request a lock in free mode.");
+    }
+
+    /* TODO:: The below stuff once we get raft configged correctly */
+    // Check if lock exists in persistent store
+    // raft.get_log(file_path) ??
+
+    // if lock does not exist, return an error
+    // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in persistent storage.");
+
+    // Check if lock exists in memory
+    if(info::locks->find(file_path) == info::locks->end()){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " does not exist in memory." << reset << std::endl;
+      }
+      // Assume failure, copy struct from persistent into memory
+
+      /* TODO:: The below stuff once we get raft configged correctly */
+      /*  
+          auto log = raft.get_log(file_path); // NEED RAFT FOR THIS
+          std::shared_ptr<Lock> lock = std::make_shared<Lock>();
+          lock->path = log.file_path;
+          lock->owners = std::make_shared<std::map<std::string, bool>>();
+          lock->status = LockStatus::FREE;
+          lock->content = "";
+          std::pair<std::string, std::shared_ptr<Lock>> entry = std::make_pair(file_path, lock);
+
+          info::locks->insert(entry);
+          info::sessions->at(client_id)->locks->insert(entry);
+      */
+      return grpc::Status(StatusCode::ABORTED, "Lock does not exist in memory."); // Get rid once we implement above
+    }
+
+    // Get the lock and check it's current status
+    std::shared_ptr<app::server::Lock> l = info::locks->at(file_path);
+    std::map<std::string, bool>::iterator is_owner = l->owners->find(client_id);
+    
+    if(l->status == LockStatus::EXCLUSIVE){
+      // Let client know someone already has the lock
+      return grpc::Status(StatusCode::ABORTED, "Someone already holds the lock in exclusive mode");
+
+    }else if(l->status == LockStatus::SHARED){
+      // If client tries to acquire the lock in shared mode, succeed
+      if(mode == LockStatus::SHARED){
+        if(is_owner == l->owners->end()){
+          l->owners->insert(std::make_pair(client_id, true));
+        }else{
+          is_owner->second = true;
+        }
+        
+        // Copy updated lock into this client's session data
+        std::map<std::string, std::shared_ptr<Lock>>::iterator it = session->locks->find(file_path);
+        if(it == session->locks->end()){
+          session->locks->insert(std::make_pair(file_path, l));
+        }else{
+          it->second = l;
+        }
+        return Status::OK;
+      }else{
+        // Fails to open lock in exclusive mode, since lock is owned in shared mode
+        return grpc::Status(StatusCode::ABORTED, "Someone already holds the lock, can't claim exclusively.");
+      }
+    }else{
+      // Success, client claims lock
+      if(is_owner == l->owners->end()){
+        l->owners->insert(std::make_pair(client_id, true));
+      }else{
+        is_owner->second = true;
+      }
+      l->status = mode;
+
+      // Update lock in session and lock data
+      std::map<std::string, std::shared_ptr<Lock>>::iterator it = session->locks->find(file_path);
+      if(it == session->locks->end()){
+        session->locks->insert(std::make_pair(file_path, l));
+      }else{
+        it->second = l;
+      }
+
+      info::locks->find(file_path)->second = l;
+
+      return Status::OK;
+    }
+    return Status::CANCELLED; // Never will make it here
+  }
+
 }  // namespace app::server
 
 namespace app::client {
@@ -668,4 +783,28 @@ namespace app::client {
       return false;
     }
   }
+
+  grpc::Status acquire_lock(std::string file_path, LockStatus mode){
+    if(info::jeopardy){
+      // Here we would wait for either timeout, or for the session to be reestablished
+      if (State::config->flag.debug) {
+          cout << grey << "We are in jeopardy." << reset << endl;
+        }
+    }
+    grpc::Status status = info::master->endpoint.acquire_lock(info::session_id, file_path, mode);
+    
+    if(status.ok()){
+      if (State::config->flag.debug) {
+        cout << green << "Successfully acquired lock." << reset << endl;
+      }
+      info::locks->insert(std::make_pair(file_path, mode));
+    }else{
+      if (State::config->flag.debug) {
+        cout << green << "Client api unable to acquire lock." << reset << endl;
+      }
+    }
+
+    return status;
+  }
+
 }  // namespace app::client

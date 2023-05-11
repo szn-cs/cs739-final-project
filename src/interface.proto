@@ -58,7 +58,6 @@ message AcquireLockRequest {
 }
 
 message AcquireLockResponse {
-  bool success = 1;
 }
 
 message ReleaseLockRequest {

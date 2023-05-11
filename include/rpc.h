@@ -37,7 +37,7 @@ namespace rpc {
     std::pair<grpc::Status, int64_t> keep_alive(std::string, std::map<std::string, LockStatus>, chrono::system_clock::time_point);  // Used when in jeopardy
     grpc::Status open_lock(std::string, std::string);                                                                               // Used to create a new file (lock)
     grpc::Status delete_lock(std::string, std::string);                                                                             // Used to delete a file (lock)
-    grpc::Status acquire_lock(std::string, LockStatus);
+    grpc::Status acquire_lock(std::string, std::string, LockStatus);
     grpc::Status release_lock(std::string);
 
     std::string address;  // <host:port>
