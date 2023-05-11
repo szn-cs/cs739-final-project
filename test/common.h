@@ -16,6 +16,7 @@ namespace test {
   void test_single_keep_alive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_maintain_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void test_delete(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
 
 }  // namespace test
 

@@ -352,10 +352,12 @@ namespace app::server {
   grpc::Status create_session(std::string client_id) {
     // Check if we already have a session with the client
     if (info::sessions->find(client_id) != info::sessions->end()) {
-      if (State::config->flag.debug) {
-        std::cout << yellow << "Client with id " << client_id << " already has a session that hasn't yet been terminated." << reset << std::endl;
+      if(!info::sessions->at(client_id)->terminated){
+        if (State::config->flag.debug) {
+          std::cout << yellow << "Client with id " << client_id << " already has a session that hasn't yet been terminated." << reset << std::endl;
+        }
+        return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
       }
-      return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
     }
 
     // Initialize session struct for this new session
@@ -461,6 +463,15 @@ namespace app::server {
     /* TODO:: The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
     // raft.get_log(file_path) ??
+
+    // IMPORTANT: The following code just checks if lock exists IN MEMORY (not needed if we check persistent)
+    if(info::locks->find(file_path) != info::locks->end()){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Lock already exists.");
+    }
+
 
     // if log exists, return OK
 

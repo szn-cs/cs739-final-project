@@ -10,6 +10,7 @@ namespace test {
       cout << green << "Test passed for this configuration." << reset << endl;
     } else {
       cout << red << "Failed to start a session with any nodes." << reset << endl;
+      return;
     }
   }
 
@@ -36,18 +37,71 @@ namespace test {
   }
 
   void test_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
-    return;
-    // for (const auto& [key, node] : *(app::State::memberList)) {
-    //   cout << key << endl;
-    //   std::pair<Status, int> r = node->endpoint.open("/test", );
-    //   auto [status, v] = r;
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
 
-    //   if (status.ok()){
-    //     cout << "Value returned: " << v << endl;
-    //   }else{
-    //     cout << red << "Failed RPC" << reset << endl;
-    //   }
-    // }
+    for (const auto& [key, node] : *(app::State::memberList)) {
+      cout << key << endl;
+      bool r = app::client::open_lock("/test");
+
+      if (r){
+        cout << "Lock created" << endl;
+      }else{
+        cout << red << "Failed to open lock, ending test for server " << key << reset << endl;
+        break;
+      }
+
+      r = app::client::open_lock("/test");
+
+      if(!r){
+        cout << "Second attempt correctly refused." << endl;
+      }else{
+        cout << red << "Accepted creation of existing lock" << reset << endl;
+      }
+
+
+    }
+  }
+
+  void test_delete(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
+
+    for (const auto& [key, node] : *(app::State::memberList)) {
+      cout << key << endl;
+      bool r = app::client::open_lock("/test");
+
+      if (r){
+        cout << "Lock created" << endl;
+      }else{
+        cout << red << "Failed to open lock, ending test for server " << key << reset << endl;
+        break;
+      }
+
+      /* NOTE: Can only happen when holding the lock. */
+      // r = app::client::acquire_lock("/test");
+      r = app::client::delete_lock("/test");
+
+      if(r){
+        cout << "Correctly deleted lock" << endl;
+      }else{
+        cout << red << "unable to delete lock" << reset << endl;
+        return;
+      }
+
+      r = app::client::open_lock("/test");
+
+      if (r){
+        cout << "Lock created" << endl;
+      }else{
+        cout << red << "Failed to open lock, ending test for server " << key << reset << endl;
+        break;
+      }
+    }
   }
 
 }  // namespace test

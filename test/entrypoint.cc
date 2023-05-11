@@ -42,6 +42,8 @@ int main(int argc, char** argv) {
     testFunctionMap["test_single_keep_alive"] = test_single_keep_alive;
     testFunctionMap["test_create"] = test_create;
     testFunctionMap["test_maintain_session"] = test_maintain_session;
+    testFunctionMap["test_create"] = test_create;
+    testFunctionMap["test_delete"] = test_delete;
 
     std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
 
