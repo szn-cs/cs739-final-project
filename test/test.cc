@@ -112,6 +112,14 @@ namespace test {
       return;
     }
 
+    r = app::client::delete_lock("/test");
+    if(!r){
+      cout << green << "Correctly failed lock, this was expected to fail." << endl;
+    }else{
+      cout << red <<"Destroyed lock even though we don't own it" << reset << endl;
+      return;
+    }
+
     grpc::Status status = app::client::acquire_lock("/test", LockStatus::EXCLUSIVE);
 
     if(status.ok()){
@@ -119,6 +127,13 @@ namespace test {
     }else{
       cout << red << "unable to delete lock" << reset << endl;
       return;
+    }
+
+    r = app::client::delete_lock("/test");
+    if(r){
+      cout << "Correctly destroyed lock." << endl;
+    }else{
+      cout << red <<"Unable to destroy lock even though we own it" << reset << endl;
     }
     
   }
@@ -171,5 +186,56 @@ namespace test {
         cout << red << "Accepted creation of existing lock" << reset << endl;
     }
   }
+
+  void test_release(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
+
+    bool r = app::client::open_lock("/test");
+
+    if (r){
+      cout << "Lock created" << endl;
+    }else{
+      cout << red << "Failed to open lock, ending test for server" << reset << endl;
+      return;
+    }
+
+    r = app::client::delete_lock("/test");
+
+    if(!r){
+      cout << green << "Correctly failed lock, this was expected to fail." << endl;
+    }else{
+      cout << red <<"Destroyed lock even though we don't own it" << reset << endl;
+      return;
+    }
+
+    grpc::Status status = app::client::acquire_lock("/test", LockStatus::EXCLUSIVE);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+
+    status = app::client::release_lock("/test");
+    if(status.ok()){
+      cout << "Correctly released lock" << endl;
+    }else{
+      cout << red << "Was not able to release lock" << reset << endl;
+      return;
+    }
+
+    r = app::client::delete_lock("/test");
+    if(r){
+      cout << green << "Correctly was unable to destroy lock." << endl;
+    }else{
+      cout << red <<"Destroyed lock even though we released" << reset << endl;
+    }
+  }
+
+
 
 }  // namespace test

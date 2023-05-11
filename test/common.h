@@ -20,6 +20,7 @@ namespace test {
   void test_acquire(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_2_clients(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_2_clients_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void test_release(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
 
 }  // namespace test
 

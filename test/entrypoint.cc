@@ -47,6 +47,7 @@ int main(int argc, char** argv) {
     testFunctionMap["test_acquire"] = test_acquire;
     testFunctionMap["test_2_clients"] = test_2_clients;
     testFunctionMap["test_2_clients_create"] = test_2_clients_create;
+    testFunctionMap["test_release"] = test_release;
 
     std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
 

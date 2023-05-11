@@ -238,7 +238,25 @@ namespace rpc {
       std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
     
-    return Status::OK;
+    return app::server::release_lock(request->client_id(), request->file_path());
+  }
+
+  grpc::Status Endpoint::release_lock(std::string client_id, std::string file_path){
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+
+    ClientContext context;
+    ReleaseLockRequest request;
+    Empty response;
+    request.set_client_id(client_id);
+    request.set_file_path(file_path);
+
+    grpc::Status status = this->stub->release_lock(&context, request, &response);
+
+    return status;
   }
 }
 
@@ -410,7 +428,6 @@ namespace app::server {
     in >> *(session->block_reply);
 
     while (true) {
-      cout << session->client_id << endl;
       chrono::system_clock::time_point lease_expires = session->start_time + session->lease_length;
       chrono::system_clock::duration time_until_expire = chrono::nanoseconds(0);
 
@@ -649,6 +666,69 @@ namespace app::server {
     return Status::CANCELLED; // Never will make it here
   }
 
+  grpc::Status release_lock(std::string client_id, std::string file_path){
+    if (info::sessions->find(client_id) == info::sessions->end()) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a session established with this server." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client does not have an existing session.");
+    }
+    std::shared_ptr<Session> session = info::sessions->at(client_id);
+
+    /* TODO:: The below stuff once we get raft configged correctly */
+    // Check if lock exists in persistent store
+    // raft.get_log(file_path) ??
+
+    // if lock does not exist, return an error
+    // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in persistent storage.");
+
+    // Grab lock from session locks
+    std::map<std::string, std::shared_ptr<Lock>>::iterator it = session->locks->find(file_path);
+    
+    if(it == session->locks->end() || it->second == nullptr){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " is not in this session's locks." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Lock was not found among this session's locks.");
+    }
+    std::shared_ptr<Lock> l = it->second;
+
+    // Check if client is an owner
+    std::map<std::string, bool>::iterator is_owner = l->owners->find(client_id);
+    if(is_owner == l->owners->end() || !is_owner->second){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " is not owned by this client." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "You were not recorded as an owner of this lock.");
+    }
+
+    // The lock exists, client is owner
+    if(l->status == LockStatus::EXCLUSIVE){
+      // Remove client from owners list, free the lock, delete from session locks
+      l->owners->erase(client_id);
+      l->status = LockStatus::FREE;
+      session->locks->erase(file_path);
+
+      // Set this new lock configuration in our server-wide lock map
+      info::locks->find(file_path)->second = l;
+      return Status::OK;
+    }else{
+      // Remove client from lock owners, set mode if 0 owners, delete from session locks
+      l->owners->erase(client_id);
+      if(l->owners->size() == 0){
+        l->status = LockStatus::FREE;
+      }
+      session->locks->erase(file_path);
+
+      // Set new lock configuration in server-wide lock map
+      info::locks->find(file_path)->second = l;
+      return Status::OK;
+    }
+
+
+
+  }
+
 }  // namespace app::server
 
 namespace app::client {
@@ -793,6 +873,7 @@ namespace app::client {
     }
     grpc::Status status = info::master->endpoint.acquire_lock(info::session_id, file_path, mode);
     
+    // Debugging
     if(status.ok()){
       if (State::config->flag.debug) {
         cout << green << "Successfully acquired lock." << reset << endl;
@@ -801,6 +882,39 @@ namespace app::client {
     }else{
       if (State::config->flag.debug) {
         cout << green << "Client api unable to acquire lock." << reset << endl;
+      }
+    }
+
+    return status;
+  }
+
+  grpc::Status release_lock(std::string file_path){
+    if(info::jeopardy){
+      // Here we would wait for either timeout, or for the session to be reestablished
+      if (State::config->flag.debug) {
+          cout << grey << "We are in jeopardy." << reset << endl;
+        }
+    }
+
+    // Check if we hold the lock client side
+    if(info::locks->find(file_path) == info::locks->end()){
+      if (State::config->flag.debug) {
+        cout << red << "We don't own lock we are trying to delete." << reset << endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client doesn't have the lock you are trying to delete.");
+    }
+
+    grpc::Status status = info::master->endpoint.release_lock(info::session_id, file_path);
+
+    // Debugging
+    if(status.ok()){
+      if (State::config->flag.debug) {
+        cout << green << "Successfully released lock." << reset << endl;
+      }
+      info::locks->erase(file_path);
+    }else{
+      if (State::config->flag.debug) {
+        cout << green << "Client api unable to release lock." << reset << endl;
       }
     }
 

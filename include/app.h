@@ -23,6 +23,7 @@ namespace app::server {
   grpc::Status open_lock(std::string, std::string);
   grpc::Status delete_lock(std::string, std::string);
   grpc::Status acquire_lock(std::string, std::string, LockStatus);
+  grpc::Status release_lock(std::string, std::string);
 
 }  // namespace app::server
 
