@@ -40,7 +40,9 @@ namespace rpc {
       std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
-    if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0) {
+    // if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0) {
+    if(app::State::stuff.server_id_ == app::State::stuff.raft_instance_->get_leader()){
+      cout << yellow << "We are leader" << reset << endl;
       return app::server::create_session(request->client_id());
     }
     return Status::CANCELLED;
@@ -105,12 +107,16 @@ namespace rpc {
       std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
 
-    if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) != 0) {
+    // if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) != 0) {
+    if(app::State::stuff.server_id_ != app::State::stuff.raft_instance_->get_leader()){
       // We are not master
       return Status(StatusCode::ABORTED, "This server is not master.");
     }
 
     if (context->IsCancelled()) {
+      if (app::State::config->flag.debug) {
+        std::cout << red << "RPC canceled master" << reset << std::endl;
+      }
       return Status(StatusCode::CANCELLED, "Exceeded deadline.");
     }
 
@@ -570,6 +576,9 @@ namespace app::server {
   int64_t attempt_extend_session(std::string client_id) {
     // Check if client has a session, if not this is likely a jeopardy RPC
     if(info::sessions->find(client_id) == info::sessions->end()){
+      if (app::State::config->flag.debug) {
+        std::cout << red << "No session established"  << reset << std::endl;
+      }
       return -1;
     }
     std::shared_ptr<Session> session = info::sessions->at(client_id);
@@ -1090,8 +1099,8 @@ namespace app::client {
             info::jeopardy = false;
 
             // Stop looping
-            looping = false;
             break;
+            looping = false;
           }
 
           // See if we have exceeded jeopardy duration
@@ -1099,6 +1108,8 @@ namespace app::client {
             info::expired = true;
             return;
           }
+
+          std::this_thread::sleep_for(chrono::seconds(1));
         }
         return;
       }
