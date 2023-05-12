@@ -26,6 +26,7 @@ namespace test {
   void test_write_shared(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_write_exclusive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_rw(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void close_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
 
 }  // namespace test
 

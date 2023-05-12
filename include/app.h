@@ -17,6 +17,7 @@ namespace app::server {
 
   void init_server_info();
   grpc::Status create_session(std::string);
+  grpc::Status close_session(std::string);
   void maintain_session(std::shared_ptr<Session>);
   void end_session(std::shared_ptr<Session>);
   int64_t attempt_extend_session(std::string);  // TODO: Make a version that takes a map of locks, for when in jeopardy
@@ -26,6 +27,7 @@ namespace app::server {
   grpc::Status release_lock(std::string, std::string);
   std::pair<grpc::Status, std::string> read(std::string, std::string);
   grpc::Status write(std::string, std::string, std::string);
+  int64_t handle_jeopardy(std::string, google::protobuf::Map<std::string, LockStatus>);
 
 }  // namespace app::server
 
@@ -38,6 +40,7 @@ namespace app::client {
    * Only the master will reply to this with rpc::Status::Ok
    */
   grpc::Status start_session();
+  void close_session();
   void maintain_session();
   bool open_lock(std::string);
   bool delete_lock(std::string);
