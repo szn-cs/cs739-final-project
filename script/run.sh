@@ -8,15 +8,15 @@ usage_example1() {
   ./target/test --help
   # terminals for cluster nodes:
   {
-    ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 9000 --config ./3_node_cluster.ini
+    ./target/app -g --port 8001 --consensus.endpoint localhost:9000 --consensus.server-id 9000 --config ./3_node_cluster.ini
     # equivalent to:
     ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 9000 --cluster.address localhost:9001 --cluster.address localhost:9002
   }
   {
-    ./target/app -g --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./3_node_cluster.ini
+    ./target/app -g --port 8002 --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./3_node_cluster.ini
   }
   {
-    ./target/app -g --consensus.endpoint localhost:9002 --consensus.server-id 9002 --config ./3_node_cluster.ini
+    ./target/app -g --port 8003 --consensus.endpoint localhost:9002 --consensus.server-id 9002 --config ./3_node_cluster.ini
   }
 
   # terminal for user/client side
