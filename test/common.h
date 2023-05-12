@@ -21,6 +21,11 @@ namespace test {
   void test_2_clients(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_2_clients_create(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
   void test_release(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void test_read_shared(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void test_read_exclusive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void test_write_shared(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void test_write_exclusive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
+  void test_rw(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables);
 
 }  // namespace test
 

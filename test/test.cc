@@ -236,6 +236,179 @@ namespace test {
     }
   }
 
+  void test_read_exclusive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
+
+    bool r = app::client::open_lock("/test");
+
+    if (r){
+      cout << "Lock created" << endl;
+    }else{
+      cout << red << "Failed to open lock, ending test for server" << reset << endl;
+      return;
+    }
+
+    grpc::Status status = app::client::acquire_lock("/test", LockStatus::EXCLUSIVE);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+
+    std::pair<grpc::Status, std::string> res = app::client::read("/test");
+    if(res.first.ok()){
+      cout << "Correctly read file (it is blank)" << endl;
+    }else{
+      cout << red << "Was not able to read file" << reset << endl;
+      return;
+    }
+  }
+
+  void test_read_shared(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
+
+    bool r = app::client::open_lock("/test");
+
+    if (r){
+      cout << "Lock created" << endl;
+    }else{
+      cout << red << "Failed to open lock, ending test for server" << reset << endl;
+      return;
+    }
+
+    grpc::Status status = app::client::acquire_lock("/test", LockStatus::SHARED);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+
+    std::pair<grpc::Status, std::string> res = app::client::read("/test");
+    if(res.first.ok()){
+      cout << "Correctly read file (it is blank)" << endl;
+    }else{
+      cout << red << "Was not able to read file" << reset << endl;
+      return;
+    }
+  }
+
+  void test_write_exclusive(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
+
+    bool r = app::client::open_lock("/test");
+
+    if (r){
+      cout << "Lock created" << endl;
+    }else{
+      cout << red << "Failed to open lock, ending test for server" << reset << endl;
+      return;
+    }
+
+    grpc::Status status = app::client::acquire_lock("/test", LockStatus::EXCLUSIVE);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+
+    status = app::client::write("/test", "Hello world");
+    if(status.ok()){
+      cout << "Correctly wrote to file" << endl;
+    }else{
+      cout << red << "Was not able to write to file" << reset << endl;
+      return;
+    }
+  }
+
+  void test_write_shared(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
+
+    bool r = app::client::open_lock("/test");
+
+    if (r){
+      cout << "Lock created" << endl;
+    }else{
+      cout << red << "Failed to open lock, ending test for server" << reset << endl;
+      return;
+    }
+
+    grpc::Status status = app::client::acquire_lock("/test", LockStatus::SHARED);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+
+    status = app::client::write("/test", "Hello world");
+    if(!status.ok()){
+      cout << green << "Correctly blocked the write" << reset <<endl;
+    }else{
+      cout << red << "Was not able to stop the write even though shared lock." << reset << endl;
+      return;
+    }
+  }
+
+  void test_rw(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+    }
+
+    bool r = app::client::open_lock("/test");
+
+    if (r){
+      cout << "Lock created" << endl;
+    }else{
+      cout << red << "Failed to open lock, ending test for server" << reset << endl;
+      return;
+    }
+
+    grpc::Status status = app::client::acquire_lock("/test", LockStatus::EXCLUSIVE);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+
+    status = app::client::write("/test", "hello");
+    if(status.ok()){
+      cout << green << "Correctly wrote 'hello' to the server" << reset <<endl;
+    }else{
+      cout << red << "Was not able to write even though exclusive lock." << reset << endl;
+      return;
+    }
+
+    std::pair<grpc::Status, std::string> res = app::client::read("/test");
+    if(res.first.ok()){
+      cout << green << "Correctly read: '" << res.second << "' from server." << reset <<endl;
+    }else{
+      cout << red << "Was not able to read from server." << reset << endl;
+      return;
+    }
+  }
+
 
 
 }  // namespace test

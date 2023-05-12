@@ -48,6 +48,11 @@ int main(int argc, char** argv) {
     testFunctionMap["test_2_clients"] = test_2_clients;
     testFunctionMap["test_2_clients_create"] = test_2_clients_create;
     testFunctionMap["test_release"] = test_release;
+    testFunctionMap["test_read_shared"] = test_read_shared;
+    testFunctionMap["test_read_exclusive"] = test_read_exclusive;
+    testFunctionMap["test_write_exclusive"] = test_write_exclusive;
+    testFunctionMap["test_write_shared"] = test_write_shared;
+    testFunctionMap["test_rw"] = test_rw;
 
     std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
 

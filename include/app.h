@@ -24,6 +24,8 @@ namespace app::server {
   grpc::Status delete_lock(std::string, std::string);
   grpc::Status acquire_lock(std::string, std::string, LockStatus);
   grpc::Status release_lock(std::string, std::string);
+  std::pair<grpc::Status, std::string> read(std::string, std::string);
+  grpc::Status write(std::string, std::string, std::string);
 
 }  // namespace app::server
 
@@ -41,5 +43,8 @@ namespace app::client {
   bool delete_lock(std::string);
   grpc::Status acquire_lock(std::string, LockStatus);
   grpc::Status release_lock(std::string);
+  std::pair<grpc::Status, std::string> read(std::string);
+  grpc::Status write(std::string, std::string);
+
 
 }  // namespace app::client

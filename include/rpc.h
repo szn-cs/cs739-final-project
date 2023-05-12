@@ -39,6 +39,8 @@ namespace rpc {
     grpc::Status delete_lock(std::string, std::string);                                                                             // Used to delete a file (lock)
     grpc::Status acquire_lock(std::string, std::string, LockStatus);
     grpc::Status release_lock(std::string, std::string);
+    std::pair<grpc::Status, std::string> read(std::string, std::string);
+    grpc::Status write(std::string, std::string, std::string);
 
     std::string address;  // <host:port>
     std::shared_ptr<interface::RPC::Stub> stub;
