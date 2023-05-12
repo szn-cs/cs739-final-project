@@ -13,10 +13,16 @@ usage_example1() {
     ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 9000 --cluster.address localhost:9001 --cluster.address localhost:9002
   }
   {
-    ./target/app -g --port 8002 --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./3_node_cluster.ini
+    ./target/app -g --port 8002 --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./_node_cluster.ini
   }
   {
     ./target/app -g --port 8003 --consensus.endpoint localhost:9002 --consensus.server-id 9002 --config ./3_node_cluster.ini
+  }
+    {
+    ./target/app -g --port 8004 --consensus.endpoint localhost:9003 --consensus.server-id 9003 --config ./3_node_cluster.ini
+  }
+    {
+    ./target/app -g --port 8005 --consensus.endpoint localhost:9004 --consensus.server-id 9004 --config ./3_node_cluster.ini
   }
 
   # terminal for user/client side
