@@ -178,7 +178,9 @@ namespace app::consensus {
       op_payload payload;
       dec_log(data, payload);
 
-      string mapped_path = utility::concatenatePath(fs::absolute(app::State::config->directory), payload.path_);
+      string base_directory = utility::concatenatePath(fs::absolute(app::State::config->directory), std::to_string(app::State::stuff.server_id_));
+
+      string mapped_path = utility::concatenatePath(base_directory, payload.path_);
       string directory = std::filesystem::path(mapped_path).parent_path().string();
 
       path_t prev_value = cur_value_;  // prev_value should be cleaned up automatically by shared_ptr
@@ -218,7 +220,7 @@ namespace app::consensus {
           cout << red << "consensus_state_machine: Unknown operation type !" << reset << endl;
       }
 
-      cur_value_ = std::make_shared<std::string>(mapped_path);
+      cur_value_ = std::make_shared<std::string>(payload.path_);
 
       last_committed_idx_ = log_idx;
 

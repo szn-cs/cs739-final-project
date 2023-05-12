@@ -190,7 +190,7 @@ namespace utility::parse {
         po::options_description app("--mode app");
 
         app.add_options()("port,p", po::value<unsigned short>(&config->port)->default_value(8000), "Port of RPC service");
-        app.add_options()("directory,d", po::value<std::string>(&config->directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp/server")), "Directory of data");
+        app.add_options()("directory,d", po::value<std::string>(&config->directory)->default_value(utility::concatenatePath(fs::current_path().generic_string(), "tmp")), "Directory of data");
         app.add_options()("cluster.address,a", make_value<std::vector<std::string>>(&config->cluster), "Addresses (incl. ports) of cluster participants <address:port>");
         app.add_options()("flag.leader", po::bool_switch(&config->flag.leader)->default_value(false), "testing: leader flag");
         app.add_options()("flag.local_ubuntu", po::bool_switch(&config->flag.local_ubuntu)->default_value(false), "indicate if running locally on ubuntu, in which case the machine ip is 127.0.0.1");

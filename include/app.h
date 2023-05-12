@@ -28,7 +28,8 @@ namespace app::server {
   std::pair<grpc::Status, std::string> read(std::string, std::string);
   grpc::Status write(std::string, std::string, std::string);
   int64_t handle_jeopardy(std::string, google::protobuf::Map<std::string, LockStatus>);
-
+  std::string read_content(std::string path);
+  bool is_exists(string path);
 }  // namespace app::server
 
 namespace app::client {
@@ -48,6 +49,5 @@ namespace app::client {
   grpc::Status release_lock(std::string);
   std::pair<grpc::Status, std::string> read(std::string);
   grpc::Status write(std::string, std::string);
-
 
 }  // namespace app::client

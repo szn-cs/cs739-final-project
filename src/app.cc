@@ -41,7 +41,7 @@ namespace rpc {
     }
 
     // if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0) {
-    if(app::State::stuff.server_id_ == app::State::stuff.raft_instance_->get_leader()){
+    if (app::State::stuff.server_id_ == app::State::stuff.raft_instance_->get_leader()) {
       cout << yellow << "We are leader" << reset << endl;
       return app::server::create_session(request->client_id());
     }
@@ -96,7 +96,7 @@ namespace rpc {
 
     return status;
   }
-} // namespace rpc
+}  // namespace rpc
 
 namespace rpc {
   /************************ keep_alive rpcs ************************/
@@ -108,7 +108,7 @@ namespace rpc {
     }
 
     // if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) != 0) {
-    if(app::State::stuff.server_id_ != app::State::stuff.raft_instance_->get_leader()){
+    if (app::State::stuff.server_id_ != app::State::stuff.raft_instance_->get_leader()) {
       // We are not master
       return Status(StatusCode::ABORTED, "This server is not master.");
     }
@@ -121,7 +121,7 @@ namespace rpc {
     }
 
     int32_t lease_duration = app::server::attempt_extend_session(request->client_id());
-    if(lease_duration < 0){
+    if (lease_duration < 0) {
       // We return -1 if there was no session to extend
       lease_duration = app::server::handle_jeopardy(request->client_id(), request->locks());
     }
@@ -492,7 +492,7 @@ namespace app::server {
     return Status::OK;
   }
 
-  grpc::Status close_session(std::string client_id){
+  grpc::Status close_session(std::string client_id) {
     if (info::sessions->find(client_id) == info::sessions->end()) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Client with id " << client_id << " does not have a session to end." << reset << std::endl;
@@ -500,7 +500,7 @@ namespace app::server {
       return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
     }
 
-    if(info::sessions->at(client_id)->terminated){
+    if (info::sessions->at(client_id)->terminated) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Client with id " << client_id << " does not have a session to end." << reset << std::endl;
       }
@@ -561,7 +561,7 @@ namespace app::server {
     // Release all locks
     for (auto it = session->locks->cbegin(); it != session->locks->cend();) {
       grpc::Status status = release_lock(session->client_id, it->first);
-      if(!status.ok()){
+      if (!status.ok()) {
         if (State::config->flag.debug) {
           std::cout << grey << "Error releasing lock " << it->first << " by client " << session->client_id << "." << reset << std::endl;
         }
@@ -575,9 +575,9 @@ namespace app::server {
 
   int64_t attempt_extend_session(std::string client_id) {
     // Check if client has a session, if not this is likely a jeopardy RPC
-    if(info::sessions->find(client_id) == info::sessions->end()){
+    if (info::sessions->find(client_id) == info::sessions->end()) {
       if (app::State::config->flag.debug) {
-        std::cout << red << "No session established"  << reset << std::endl;
+        std::cout << red << "No session established" << reset << std::endl;
       }
       return -1;
     }
@@ -599,10 +599,10 @@ namespace app::server {
     return session->lease_length.count();
   }
 
-  int64_t handle_jeopardy(std::string client_id, google::protobuf::Map<std::string, LockStatus> locks){
+  int64_t handle_jeopardy(std::string client_id, google::protobuf::Map<std::string, LockStatus> locks) {
     // Create a session for the client
     grpc::Status sess_status = create_session(client_id);
-    if(!sess_status.ok()){
+    if (!sess_status.ok()) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Unable to start new session with client with id " << client_id << "." << reset << std::endl;
       }
@@ -614,9 +614,9 @@ namespace app::server {
     }
 
     // Try to acquire all locks previously owned by the client
-    for(auto & [file_path, mode] : locks){
+    for (auto& [file_path, mode] : locks) {
       grpc::Status acquire_status = acquire_lock(client_id, file_path, mode);
-      if(!acquire_status.ok()){
+      if (!acquire_status.ok()) {
         // If we are unable to acquire any of the locks previously held by the client, end session
         if (State::config->flag.debug) {
           std::cout << yellow << "Client with id " << client_id << " unable to acquire lock " << file_path << "." << reset << std::endl;
@@ -640,12 +640,10 @@ namespace app::server {
       return grpc::Status(StatusCode::ABORTED, "Client does not have an existing session.");
     }
 
-    /* TODO:: The below stuff once we get raft configged correctly */
+    /* The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
-    // raft.get_log(file_path) ??
-
     // IMPORTANT: The following code just checks if lock exists IN MEMORY (not needed if we check persistent)
-    if (info::locks->find(file_path) != info::locks->end()) {
+    if (is_exists(file_path)) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
       }
@@ -655,7 +653,11 @@ namespace app::server {
     // if log exists, return OK
 
     // if log does not exist, create it within persistent memory
-    // raft.set(file_path, "");
+    if (State::config->flag.debug)
+      cout << on_bright_cyan << "🧬 Trying to replicate command: "
+           << "WRITE " << file_path << " " << reset << endl;
+    std::string s = "";
+    app::consensus::append_log(app::consensus::op_type::WRITE, file_path, s);
 
     // Add lock to in memory data structures
     std::shared_ptr<Lock> lock = std::make_shared<Lock>();
@@ -696,15 +698,20 @@ namespace app::server {
       return grpc::Status(StatusCode::ABORTED, "Client does not hold this lock in exclusive mode.");
     }
 
-    /* TODO:: The below stuff once we get raft configged correctly */
+    /* The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
-    // raft.get_log(file_path) ??
+    if (is_exists(file_path)) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "file doesn't exists.");
+    }
 
     // if log does not exist, return an error
     // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in the raft log.");
 
     // delete the log from raft storage
-    // raft.delete(file_path) ??
+    fs::remove(file_path);
 
     // Delete the lock from in memory storage
     session->locks->erase(file_path);
@@ -728,7 +735,12 @@ namespace app::server {
 
     /* TODO:: The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
-    // raft.get_log(file_path) ??
+    if (is_exists(file_path)) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "file doesn't exists.");
+    }
 
     // if lock does not exist, return an error
     // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in persistent storage.");
@@ -741,19 +753,16 @@ namespace app::server {
       // Assume failure, copy struct from persistent into memory
 
       /* TODO:: The below stuff once we get raft configged correctly */
-      /*
-          auto log = raft.get_log(file_path); // NEED RAFT FOR THIS
-          std::shared_ptr<Lock> lock = std::make_shared<Lock>();
-          lock->path = log.file_path;
-          lock->owners = std::make_shared<std::map<std::string, bool>>();
-          lock->status = LockStatus::FREE;
-          lock->content = "";
-          std::pair<std::string, std::shared_ptr<Lock>> entry = std::make_pair(file_path, lock);
 
-          info::locks->insert(entry);
-          info::sessions->at(client_id)->locks->insert(entry);
-      */
-      return grpc::Status(StatusCode::ABORTED, "Lock does not exist in memory.");  // Get rid once we implement above
+      std::shared_ptr<Lock> lock = std::make_shared<Lock>();
+      lock->path = file_path;
+      lock->owners = std::make_shared<std::map<std::string, bool>>();
+      lock->status = LockStatus::FREE;
+      lock->content = "";
+      std::pair<std::string, std::shared_ptr<Lock>> entry = std::make_pair(file_path, lock);
+
+      info::locks->insert(entry);
+      info::sessions->at(client_id)->locks->insert(entry);
     }
 
     // Get the lock and check it's current status
@@ -818,10 +827,15 @@ namespace app::server {
     }
     std::shared_ptr<Session> session = info::sessions->at(client_id);
 
-
-    /* TODO:: The below stuff once we get raft configged correctly */
+    /* The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
-    // raft.get_log(file_path) ??
+    // IMPORTANT: The following code just checks if lock exists IN MEMORY (not needed if we check persistent)
+    if (is_exists(file_path)) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Lock already exists.");
+    }
 
     // if lock does not exist, return an error
     // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in persistent storage.");
@@ -886,7 +900,11 @@ namespace app::server {
 
     /* TODO:: The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
-    // raft.get_log(file_path) ??
+    try {
+      res.second = app::server::read_content(file_path);
+    } catch (const std::exception& ex) {
+      std::cerr << "Read error: " << ex.what() << std::endl;
+    }
 
     // if lock does not exist, return an error
     // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in persistent storage.");
@@ -912,9 +930,6 @@ namespace app::server {
       res.first = grpc::Status(StatusCode::ABORTED, "You were not recorded as an owner of this lock.");
       return res;
     }
-
-    // TODO: The "hello" string below would hold the persistent lock's content
-    res.second = "hello";  // raft.get(file_path)
     return res;
   }
 
@@ -927,9 +942,15 @@ namespace app::server {
     }
     std::shared_ptr<Session> session = info::sessions->at(client_id);
 
-    /* TODO:: The below stuff once we get raft configged correctly */
+    /*  The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
-    // raft.get_log(file_path) ??
+    // IMPORTANT: The following code just checks if lock exists IN MEMORY (not needed if we check persistent)
+    if (is_exists(file_path)) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Lock already exists.");
+    }
 
     // if lock does not exist, return an error
     // return grpc::Status(StatusCode::ABORTED, "The lock does not exist in persistent storage.");
@@ -954,10 +975,35 @@ namespace app::server {
       return grpc::Status(StatusCode::ABORTED, "You were not recorded as an owner of this lock.");
     }
 
-    // TODO: Set the log entry for the filepath
-    // raft.set(file_path, content);
+    if (State::config->flag.debug)
+      cout << on_bright_cyan << "🧬 Trying to replicate command: "
+           << "WRITE " << file_path << " " << reset << endl;
+    app::consensus::append_log(app::consensus::op_type::WRITE, file_path, content);
 
     return Status::OK;
+  }
+
+  std::string read_content(std::string path) {
+    string base_directory = utility::concatenatePath(fs::absolute(app::State::config->directory), std::to_string(app::State::stuff.server_id_));
+    string mapped_path = utility::concatenatePath(base_directory, path);
+
+    ifstream f(mapped_path);  //taking file as inputstream
+    string str;
+    if (f) {
+      ostringstream ss;
+      ss << f.rdbuf();  // reading data
+      str = ss.str();
+    } else {
+      throw("Failed to open file.");
+    }
+    return str;
+  }
+
+  bool is_exists(string path) {
+    string base_directory = utility::concatenatePath(fs::absolute(app::State::config->directory), std::to_string(app::State::stuff.server_id_));
+    string mapped_path = utility::concatenatePath(base_directory, path);
+
+    return fs::exists(mapped_path);
   }
 
 }  // namespace app::server
@@ -1015,12 +1061,12 @@ namespace app::client {
     return Status::OK;
   }
 
-  void close_session(){
+  void close_session() {
     if (State::config->flag.debug) {
       cout << yellow << "Ending session." << reset << endl;
     }
 
-    if(info::session_id.empty()){
+    if (info::session_id.empty()) {
       if (State::config->flag.debug) {
         cout << red << "No session to end." << reset << endl;
       }
@@ -1074,7 +1120,7 @@ namespace app::client {
         // Send keep alives which include the keys we believe we own to every server, keep doing so
         // until we hit jeopardy duration
         bool looping = true;
-        while(looping){
+        while (looping) {
           for (const auto& [key, node] : *(State::memberList)) {
             std::pair<grpc::Status, int64_t> res = node->endpoint.keep_alive(info::session_id, *(info::locks));
 
@@ -1086,7 +1132,7 @@ namespace app::client {
             }
 
             // Master was found, check if session is still valid
-            if(res.second < 0){
+            if (res.second < 0) {
               // Indication that lease is expired, master didn't extend it
               info::expired = true;
               return;
@@ -1104,7 +1150,7 @@ namespace app::client {
           }
 
           // See if we have exceeded jeopardy duration
-          if(chrono::system_clock::now() > stopJeopardy){
+          if (chrono::system_clock::now() > stopJeopardy) {
             info::expired = true;
             return;
           }
@@ -1124,7 +1170,7 @@ namespace app::client {
       }
       auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
       std::this_thread::sleep_until(stopJeopardy);
-      if(info::jeopardy || info::expired){
+      if (info::jeopardy || info::expired) {
         cout << grey << "Session expired." << reset << endl;
         return false;
       }
@@ -1153,7 +1199,7 @@ namespace app::client {
       }
       auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
       std::this_thread::sleep_until(stopJeopardy);
-      if(info::jeopardy || info::expired){
+      if (info::jeopardy || info::expired) {
         cout << grey << "Session expired." << reset << endl;
         return false;
       }
@@ -1182,7 +1228,7 @@ namespace app::client {
       }
       auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
       std::this_thread::sleep_until(stopJeopardy);
-      if(info::jeopardy || info::expired){
+      if (info::jeopardy || info::expired) {
         cout << grey << "Session expired." << reset << endl;
         return grpc::Status(StatusCode::ABORTED, "Session expired.");
       }
@@ -1213,7 +1259,7 @@ namespace app::client {
       }
       auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
       std::this_thread::sleep_until(stopJeopardy);
-      if(info::jeopardy || info::expired){
+      if (info::jeopardy || info::expired) {
         cout << grey << "Session expired." << reset << endl;
         return grpc::Status(StatusCode::ABORTED, "Session expired.");
       }
@@ -1252,9 +1298,9 @@ namespace app::client {
       }
       auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
       std::this_thread::sleep_until(stopJeopardy);
-      if(info::jeopardy || info::expired){
+      if (info::jeopardy || info::expired) {
         cout << grey << "Session expired." << reset << endl;
-        
+
         grpc::Status s = grpc::Status(StatusCode::ABORTED, "Session expired.");
         std::pair<grpc::Status, std::string> res = std::make_pair(s, "");
         return res;
@@ -1297,7 +1343,7 @@ namespace app::client {
       }
       auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
       std::this_thread::sleep_until(stopJeopardy);
-      if(info::jeopardy || info::expired){
+      if (info::jeopardy || info::expired) {
         cout << grey << "Session expired." << reset << endl;
         return grpc::Status(StatusCode::ABORTED, "Session expired.");
       }
