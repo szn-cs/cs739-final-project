@@ -178,14 +178,38 @@ namespace app::consensus {
       op_payload payload;
       dec_log(data, payload);
 
-      path_t prev_value = cur_value_;
+      string mapped_path = utility::concatenatePath(fs::absolute(app::State::config->directory), payload.path_);
+      string directory = std::filesystem::path(mapped_path).parent_path().string();
+
+      path_t prev_value = cur_value_;  // prev_value should be cleaned up automatically by shared_ptr
 
       switch (payload.type_) {
         case app::consensus::op_type::CREATE: {
           // create file
         } break;
         case app::consensus::op_type::WRITE: {
-          // append contents to file
+          // std::cout << static_cast<std::underlying_type<app::consensus::op_type>::type>(payload.type_) << std::endl;
+          srand((unsigned)time(NULL));
+          // Get a random number
+          int random = rand();
+
+          fs::create_directories(directory);
+
+          string temp = mapped_path + "_" + std::to_string(random) + ".tmp";
+          ofstream o;  //Write to a temporary file
+          o.open(temp);
+          o << payload.content_;
+          o.close();
+
+          //Perform an atomic move operation... needed so readers can't open a partially written file
+          if (std::rename(temp.c_str(), mapped_path.c_str()) != 0) {
+            perror("Error renaming file");
+            cout << red << mapped_path << reset << endl;
+            cout << red << temp << reset << endl;
+          } else if (app::State::config->flag.debug) {
+            cout << cyan << "📄 writing file: " << mapped_path << reset << endl;
+          }
+
         } break;
         case app::consensus::op_type::DELETE: {
           // remove file
@@ -194,9 +218,7 @@ namespace app::consensus {
           cout << red << "consensus_state_machine: Unknown operation type !" << reset << endl;
       }
 
-      cur_value_ = std::make_shared<std::string>(payload.path_);
-
-      // prev_value should be cleaned up automatically by shared_ptr
+      cur_value_ = std::make_shared<std::string>(mapped_path);
 
       last_committed_idx_ = log_idx;
 

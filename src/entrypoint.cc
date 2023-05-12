@@ -20,10 +20,10 @@ void example_usage_of_consensus() {
       cout << grey << "⏳ wait 2s" << reset << endl;
       sleep(2);
 
-      cout << on_bright_cyan << "🧬 Trying to replicate command `+123`" << reset << endl;
-
-      std::string path = "/dir/file";
+      std::string path = "./dir/file";
       std::string contents = "contents inside file";
+      cout << on_bright_cyan << "🧬 Trying to replicate command: "
+           << "WRITE " << path << " " << reset << endl;
       append_log(op_type::WRITE, path, contents);
     }
   }
