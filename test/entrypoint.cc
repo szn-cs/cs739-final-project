@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
     testFunctionMap["test_write_exclusive"] = test_write_exclusive;
     testFunctionMap["test_write_shared"] = test_write_shared;
     testFunctionMap["test_rw"] = test_rw;
+    testFunctionMap["close_session"] = close_session;
 
     std::cout << termcolor::grey << "arguments provided: " << command + " " + key + " " + value + " " + target << termcolor::reset << std::endl;
 

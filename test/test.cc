@@ -409,6 +409,55 @@ namespace test {
     }
   }
 
+  void close_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables){
+    app::client::close_session();
+    cout << cyan << "You should have seen some form of error since no session exists yet." << reset << endl;
+
+    grpc::Status r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+      return;
+    }
+
+    bool r = app::client::open_lock("/test");
+
+    if (r){
+      cout << "Lock created" << endl;
+    }else{
+      cout << red << "Failed to open lock, ending test for server" << reset << endl;
+      return;
+    }
+
+    grpc::Status status = app::client::acquire_lock("/test", LockStatus::EXCLUSIVE);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+
+    app::client::close_session();
+    cout << cyan << "There should be no errors on this close since we had a session." << reset << endl;
+
+
+    r1 = app::client::start_session();
+    if(!r1.ok()){
+      cout << red << "UNABLE TO START SESSION AFTER CLOSING PREVIOUSLY: " << r1.error_message() << reset << endl;
+      return;
+    }
+
+    status = app::client::acquire_lock("/test", LockStatus::EXCLUSIVE);
+
+    if(status.ok()){
+      cout << "Correctly acquired lock" << endl;
+    }else{
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+  }
+
+
 
 
 }  // namespace test

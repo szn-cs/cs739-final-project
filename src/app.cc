@@ -66,6 +66,37 @@ namespace rpc {
 }  // namespace rpc
 
 namespace rpc {
+  /************************ close_session rpcs ************************/
+  grpc::Status RPC::close_session(ServerContext* context, const interface::CloseSessionRequest* request, interface::Empty* response) {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+
+    return app::server::close_session(request->client_id());
+  }
+
+  grpc::Status Endpoint::close_session(std::string client_id) {
+    if (app::State::config->flag.debug) {
+      const std::string className = "Endpoint";
+      const string n = className + "::" + __func__;
+      std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
+    }
+
+    ClientContext context;
+    CloseSessionRequest request;
+    Empty response;
+
+    request.set_client_id(client_id);
+
+    grpc::Status status = this->stub->close_session(&context, request, &response);
+
+    return status;
+  }
+} // namespace rpc
+
+namespace rpc {
   /************************ keep_alive rpcs ************************/
   grpc::Status RPC::keep_alive(ServerContext* context, const interface::KeepAliveRequest* request, interface::KeepAliveResponse* response) {
     if (app::State::config->flag.debug) {
@@ -84,6 +115,10 @@ namespace rpc {
     }
 
     int32_t lease_duration = app::server::attempt_extend_session(request->client_id());
+    if(lease_duration < 0){
+      // We return -1 if there was no session to extend
+      lease_duration = app::server::handle_jeopardy(request->client_id(), request->locks());
+    }
     response->set_lease_duration(lease_duration);
 
     return Status::OK;
@@ -111,7 +146,7 @@ namespace rpc {
     return res;
   }
 
-  std::pair<grpc::Status, int64_t> Endpoint::keep_alive(std::string client_id, std::map<std::string, LockStatus> locks, chrono::system_clock::time_point deadline) {
+  std::pair<grpc::Status, int64_t> Endpoint::keep_alive(std::string client_id, std::map<std::string, LockStatus> locks) {
     if (app::State::config->flag.debug) {
       const std::string className = "Endpoint";
       const string n = className + "::" + __func__;
@@ -123,7 +158,6 @@ namespace rpc {
     KeepAliveResponse response;
     request.set_client_id(client_id);
     *(request.mutable_locks()) = google::protobuf::Map<std::string, LockStatus>(locks.begin(), locks.end());
-    context.set_deadline(deadline);
 
     grpc::Status status = this->stub->keep_alive(&context, request, &response);
 
@@ -454,6 +488,25 @@ namespace app::server {
     return Status::OK;
   }
 
+  grpc::Status close_session(std::string client_id){
+    if (info::sessions->find(client_id) == info::sessions->end()) {
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a session to end." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
+    }
+
+    if(info::sessions->at(client_id)->terminated){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " does not have a session to end." << reset << std::endl;
+      }
+      return grpc::Status(StatusCode::ABORTED, "Client has an existing session.");
+    }
+
+    end_session(info::sessions->at(client_id));
+    return Status::OK;
+  }
+
   void maintain_session(std::shared_ptr<Session> session) {
     if (State::config->flag.debug) {
       std::cout << cyan << "Maintaining the following session:" << endl
@@ -502,12 +555,25 @@ namespace app::server {
     session->terminated = true;
 
     // Release all locks
-    for (auto& [key, lock] : *(session->locks)) {
-      // TODO:: Implement
+    for (auto it = session->locks->cbegin(); it != session->locks->cend();) {
+      grpc::Status status = release_lock(session->client_id, it->first);
+      if(!status.ok()){
+        if (State::config->flag.debug) {
+          std::cout << grey << "Error releasing lock " << it->first << " by client " << session->client_id << "." << reset << std::endl;
+        }
+      }
+      it = session->locks->cbegin();
+    }
+    if (State::config->flag.debug) {
+      std::cout << cyan << "Terminated session." << reset << std::endl;
     }
   }
 
   int64_t attempt_extend_session(std::string client_id) {
+    // Check if client has a session, if not this is likely a jeopardy RPC
+    if(info::sessions->find(client_id) == info::sessions->end()){
+      return -1;
+    }
     std::shared_ptr<Session> session = info::sessions->at(client_id);
 
     // Will block until the session manager indicates it is time to send a reply
@@ -524,6 +590,39 @@ namespace app::server {
 
     // Return so that we can send response from the rpc service
     return session->lease_length.count();
+  }
+
+  int64_t handle_jeopardy(std::string client_id, google::protobuf::Map<std::string, LockStatus> locks){
+    // Create a session for the client
+    grpc::Status sess_status = create_session(client_id);
+    if(!sess_status.ok()){
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Unable to start new session with client with id " << client_id << "." << reset << std::endl;
+      }
+      return -1;
+    }
+
+    if (State::config->flag.debug) {
+      std::cout << green << "Started new session with client with id " << client_id << "." << reset << std::endl;
+    }
+
+    // Try to acquire all locks previously owned by the client
+    for(auto & [file_path, mode] : locks){
+      grpc::Status acquire_status = acquire_lock(client_id, file_path, mode);
+      if(!acquire_status.ok()){
+        // If we are unable to acquire any of the locks previously held by the client, end session
+        if (State::config->flag.debug) {
+          std::cout << yellow << "Client with id " << client_id << " unable to acquire lock " << file_path << "." << reset << std::endl;
+        }
+        end_session(info::sessions->at(client_id));
+      }
+      if (State::config->flag.debug) {
+        std::cout << yellow << "Client with id " << client_id << " acquired lock " << file_path << " successfully." << reset << std::endl;
+      }
+    }
+
+    // Extend the client's new session, similar to how they would send keep_alive right after session creation
+    return attempt_extend_session(client_id);
   }
 
   grpc::Status open_lock(std::string client_id, std::string file_path) {
@@ -712,6 +811,7 @@ namespace app::server {
     }
     std::shared_ptr<Session> session = info::sessions->at(client_id);
 
+
     /* TODO:: The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
     // raft.get_log(file_path) ??
@@ -748,6 +848,7 @@ namespace app::server {
 
       // Set this new lock configuration in our server-wide lock map
       info::locks->find(file_path)->second = l;
+
       return Status::OK;
     } else {
       // Remove client from lock owners, set mode if 0 owners, delete from session locks
@@ -909,6 +1010,32 @@ namespace app::client {
     return Status::OK;
   }
 
+  void close_session(){
+    if (State::config->flag.debug) {
+      cout << yellow << "Ending session." << reset << endl;
+    }
+
+    if(info::session_id.empty()){
+      if (State::config->flag.debug) {
+        cout << red << "No session to end." << reset << endl;
+      }
+      return;
+    }
+
+    grpc::Status status = info::master->endpoint.close_session(info::session_id);
+
+    // Debugging
+    if (status.ok()) {
+      if (State::config->flag.debug) {
+        cout << green << "Successfully closed session." << reset << endl;
+      }
+    } else {
+      if (State::config->flag.debug) {
+        cout << red << "Failed to close session." << reset << endl;
+      }
+    }
+  }
+
   void maintain_session() {
     if (State::config->flag.debug) {
       cout << yellow << "Beginning session maitenence." << reset << endl;
@@ -918,6 +1045,8 @@ namespace app::client {
     if (info::master == nullptr) {
       return;
     }
+
+    auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
 
     while (true) {
       // Wait until response or the deadline is reached
@@ -935,8 +1064,46 @@ namespace app::client {
         if (State::config->flag.debug) {
           cout << red << "Entering jeopardy." << reset << endl;
         }
-        // TODO:: Implement jeopardy
         info::jeopardy = true;
+
+        // Send keep alives which include the keys we believe we own to every server, keep doing so
+        // until we hit jeopardy duration
+        bool looping = true;
+        while(looping){
+          for (const auto& [key, node] : *(State::memberList)) {
+            std::pair<grpc::Status, int64_t> res = node->endpoint.keep_alive(info::session_id, *(info::locks));
+
+            if (!res.first.ok()) {  // If server is down or replies with grpc::StatusCode::ABORTED
+              if (State::config->flag.debug) {
+                cout << grey << "Node " << key << " replied with an error." << reset << endl;
+              }
+              continue;
+            }
+
+            // Master was found, check if session is still valid
+            if(res.second < 0){
+              // Indication that lease is expired, master didn't extend it
+              info::expired = true;
+              return;
+            }
+
+            // Update session info
+            info::master = node;
+            info::lease_start = chrono::system_clock::now();
+            info::lease_length = chrono::milliseconds(res.second);
+            info::jeopardy = false;
+
+            // Stop looping
+            looping = false;
+            break;
+          }
+
+          // See if we have exceeded jeopardy duration
+          if(chrono::system_clock::now() > stopJeopardy){
+            info::expired = true;
+            return;
+          }
+        }
         return;
       }
     }
@@ -947,6 +1114,12 @@ namespace app::client {
       // Here we would wait for either timeout, or for the session to be reestablished
       if (State::config->flag.debug) {
         cout << grey << "We are in jeopardy." << reset << endl;
+      }
+      auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
+      std::this_thread::sleep_until(stopJeopardy);
+      if(info::jeopardy || info::expired){
+        cout << grey << "Session expired." << reset << endl;
+        return false;
       }
     }
 
@@ -971,6 +1144,12 @@ namespace app::client {
       if (State::config->flag.debug) {
         cout << grey << "We are in jeopardy." << reset << endl;
       }
+      auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
+      std::this_thread::sleep_until(stopJeopardy);
+      if(info::jeopardy || info::expired){
+        cout << grey << "Session expired." << reset << endl;
+        return false;
+      }
     }
 
     grpc::Status status = info::master->endpoint.delete_lock(info::session_id, file_path);
@@ -994,7 +1173,14 @@ namespace app::client {
       if (State::config->flag.debug) {
         cout << grey << "We are in jeopardy." << reset << endl;
       }
+      auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
+      std::this_thread::sleep_until(stopJeopardy);
+      if(info::jeopardy || info::expired){
+        cout << grey << "Session expired." << reset << endl;
+        return grpc::Status(StatusCode::ABORTED, "Session expired.");
+      }
     }
+
     grpc::Status status = info::master->endpoint.acquire_lock(info::session_id, file_path, mode);
 
     // Debugging
@@ -1017,6 +1203,12 @@ namespace app::client {
       // Here we would wait for either timeout, or for the session to be reestablished
       if (State::config->flag.debug) {
         cout << grey << "We are in jeopardy." << reset << endl;
+      }
+      auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
+      std::this_thread::sleep_until(stopJeopardy);
+      if(info::jeopardy || info::expired){
+        cout << grey << "Session expired." << reset << endl;
+        return grpc::Status(StatusCode::ABORTED, "Session expired.");
       }
     }
 
@@ -1050,6 +1242,15 @@ namespace app::client {
       // Here we would wait for either timeout, or for the session to be reestablished
       if (State::config->flag.debug) {
         cout << grey << "We are in jeopardy." << reset << endl;
+      }
+      auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
+      std::this_thread::sleep_until(stopJeopardy);
+      if(info::jeopardy || info::expired){
+        cout << grey << "Session expired." << reset << endl;
+        
+        grpc::Status s = grpc::Status(StatusCode::ABORTED, "Session expired.");
+        std::pair<grpc::Status, std::string> res = std::make_pair(s, "");
+        return res;
       }
     }
 
@@ -1086,6 +1287,12 @@ namespace app::client {
       // Here we would wait for either timeout, or for the session to be reestablished
       if (State::config->flag.debug) {
         cout << grey << "We are in jeopardy." << reset << endl;
+      }
+      auto stopJeopardy = info::lease_start + info::lease_length + chrono::milliseconds(utility::JEAPARDY_DURATION);
+      std::this_thread::sleep_until(stopJeopardy);
+      if(info::jeopardy || info::expired){
+        cout << grey << "Session expired." << reset << endl;
+        return grpc::Status(StatusCode::ABORTED, "Session expired.");
       }
     }
 

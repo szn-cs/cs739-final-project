@@ -4,6 +4,7 @@ package interface;   // similar to namespace, avoid conflicts
 service RPC { 
     rpc ping(Empty) returns (Empty) {};
     rpc init_session(InitSessionRequest) returns (Empty) {};
+    rpc close_session(CloseSessionRequest) returns (Empty) {};
     rpc keep_alive(KeepAliveRequest) returns (KeepAliveResponse) {};
     rpc open_lock(OpenLockRequest) returns (Empty) {};
     rpc delete_lock(DeleteLockRequest) returns (Empty) {};
@@ -29,6 +30,10 @@ message Empty {
 }
 
 message InitSessionRequest {
+  string client_id = 1;
+}
+
+message CloseSessionRequest {
   string client_id = 1;
 }
 
