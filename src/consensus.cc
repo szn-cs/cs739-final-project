@@ -31,36 +31,9 @@ namespace app::consensus {
               << ", state machine value: " << get_sm()->get_current_value() << std::endl;
   }
 
-  void append_log(const std::string& cmd, const std::vector<std::string>& tokens) {
-    char cmd_char = cmd[0];
-    int operand = atoi(tokens[0].substr(1).c_str());
-    consensus_state_machine::op_type op = consensus_state_machine::ADD;
-
-    switch (cmd_char) {
-      // TODO: changing values of files
-      case '+':
-        op = consensus_state_machine::ADD;
-        break;
-      case '-':
-        op = consensus_state_machine::SUB;
-        break;
-      case '*':
-        op = consensus_state_machine::MUL;
-        break;
-      case '/':
-        op = consensus_state_machine::DIV;
-        if (!operand) {
-          std::cout << "cannot divide by zero" << std::endl;
-          return;
-        }
-        break;
-      default:
-        op = consensus_state_machine::SET;
-        break;
-    };
-
+  void append_log(op_type OP, std::string& path, std::string& contents) {
     // Serialize and generate Raft log to append.
-    ptr<buffer> new_log = consensus_state_machine::enc_log({op, operand});
+    ptr<buffer> new_log = consensus_state_machine::enc_log({OP, path, contents});
 
     // To measure the elapsed time.
     ptr<_TestSuite::TestSuite::Timer> timer = cs_new<_TestSuite::TestSuite::Timer>();
@@ -145,16 +118,14 @@ namespace app::consensus {
         asio_opt,
         params);
     if (!app::State::stuff.raft_instance_) {
-      std::cerr << "Failed to initialize launcher (see the message "
-                   "in the log file)."
-                << std::endl;
+      std::cerr << "Failed to initialize launcher (see the message in the log file)." << std::endl;
       log_wrap.reset();
       exit(-1);
     }
 
     // Wait until Raft server is ready (upto 5 seconds).
     const size_t MAX_TRY = 100;
-    std::cout << "init Raft instance ";
+    std::cout << cyan << "⚡ consensus service - init Raft instance " << reset;
     for (size_t ii = 0; ii < MAX_TRY; ++ii) {
       if (app::State::stuff.raft_instance_->is_initialized()) {
         std::cout << " done" << std::endl;
@@ -240,11 +211,11 @@ namespace app::consensus {
 };  // namespace app::consensus
 
 /*
-   ___ _   _   __  __ _____ __  __  ___  ______   __  _     ___   ____   ____ _____ ___  ____  _____
-  |_ _| \ | | |  \/  | ____|  \/  |/ _ \|  _ \ \ / / | |   / _ \ / ___| / ___|_   _/ _ \|  _ \| ____|
-   | ||  \| | | |\/| |  _| | |\/| | | | | |_) \ V /  | |  | | | | |  _  \___ \ | || | | | |_) |  _|
-   | || |\  | | |  | | |___| |  | | |_| |  _ < | |   | |__| |_| | |_| |  ___) || || |_| |  _ <| |___
-  |___|_| \_| |_|  |_|_____|_|  |_|\___/|_| \_\|_|   |_____\___/ \____| |____/ |_| \___/|_| \_\_____|
+  _     ___   ____   ____ _____ ___  ____  _____
+ | |   / _ \ / ___| / ___|_   _/ _ \|  _ \| ____|
+ | |  | | | | |  _  \___ \ | || | | | |_) |  _|
+ | |__| |_| | |_| |  ___) || || |_| |  _ <| |___
+ |_____\___/ \____| |____/ |_| \___/|_| \_\_____|
 */
 
 namespace nuraft {

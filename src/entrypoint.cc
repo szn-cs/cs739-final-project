@@ -21,8 +21,10 @@ void example_usage_of_consensus() {
       sleep(2);
 
       cout << on_bright_cyan << "🧬 Trying to replicate command `+123`" << reset << endl;
-      const std::vector<std::string>& tokens = {"+123"};
-      append_log("+", tokens);
+
+      std::string path = "/dir/file";
+      std::string contents = "contents inside file";
+      append_log(op_type::WRITE, path, contents);
     }
   }
 }
@@ -56,7 +58,11 @@ int main(int argc, char* argv[]) {
     app::initializeStaticInstance(config, config->cluster);
 
     // run NuRaft stuff
-    //app::init_consensus();
+    app::init_consensus();
+    if (app::State::config->flag.debug) {
+      app::consensus::print_status();
+      app::consensus::server_list();
+    }
 
     // Initialize the server data structures
     app::server::init_server_info();
@@ -64,14 +70,14 @@ int main(int argc, char* argv[]) {
     // RPC services on separate threads
     utility::parse::Address a = config->getAddress<app::Service::NODE>();
     std::thread t(utility::server::run_gRPC_server<rpc::RPC>, a);
-    std::cout << blue << "⚡ service: " << a.toString() << reset << std::endl;
+    std::cout << blue << "⚡ lock service: " << a.toString() << reset << std::endl;
 
     // call app functionality
     // TODO:
     // start a lock service server - expose that to the client and accept requests
 
     // EXAMPLE of NuRaft consensus
-    //example_usage_of_consensus();
+    example_usage_of_consensus();
 
     t.join();
 

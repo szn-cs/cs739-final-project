@@ -20,3 +20,9 @@ _(build tested on Linux OS)_
 ### TODO:
 
 -   [build process] expose client header functions once build moves to a library rather than an executable.
+
+---
+
+## 🔑 COPY RIGHT NOTICE:
+
+Code for using NuRaft library was modified over from the examples in their repo (Github @ ebay/nuraft).

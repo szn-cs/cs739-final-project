@@ -4,8 +4,17 @@
 #include "library.h"
 #include "utility.h"
 
+// maximum file path supported by our service
+#define MAX_PATH_SIZE 256
+
 namespace app::consensus {
   using namespace nuraft;
+
+  enum class op_type : int {
+    CREATE = 0x2,
+    WRITE = 0x0,
+    DELETE = 0x1,
+  };
 
   typedef struct server_stuff {
     server_stuff()

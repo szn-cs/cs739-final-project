@@ -6,11 +6,11 @@
 #include "utility.h"
 
 /*
-   ___ _   _   __  __ _____ __  __  ___  ______   __  _     ___   ____   ____ _____ ___  ____  _____
-  |_ _| \ | | |  \/  | ____|  \/  |/ _ \|  _ \ \ / / | |   / _ \ / ___| / ___|_   _/ _ \|  _ \| ____|
-   | ||  \| | | |\/| |  _| | |\/| | | | | |_) \ V /  | |  | | | | |  _  \___ \ | || | | | |_) |  _|
-   | || |\  | | |  | | |___| |  | | |_| |  _ < | |   | |__| |_| | |_| |  ___) || || |_| |  _ <| |___
-  |___|_| \_| |_|  |_|_____|_|  |_|\___/|_| \_\|_|   |_____\___/ \____| |____/ |_| \___/|_| \_\_____|
+  _     ___   ____   ____ _____ ___  ____  _____
+ | |   / _ \ / ___| / ___|_   _/ _ \|  _ \| ____|
+ | |  | | | | |  _  \___ \ | || | | | |_) |  _|
+ | |__| |_| | |_| |  ___) || || |_| |  _ <| |___
+ |_____\___/ \____| |____/ |_| \___/|_| \_\_____|
 */
 
 namespace nuraft {
@@ -135,43 +135,38 @@ namespace nuraft {
 namespace app::consensus {
   using namespace nuraft;
 
+  typedef std::shared_ptr<std::string> path_t;  // TODO: enforce MAX_PATH_SIZE
+
   class consensus_state_machine : public state_machine {
    public:
     consensus_state_machine(bool async_snapshot = false)
-        : cur_value_(0), last_committed_idx_(0), async_snapshot_(async_snapshot) {}
+        : cur_value_(nullptr), last_committed_idx_(0), async_snapshot_(async_snapshot) {}
 
     ~consensus_state_machine() {}
 
-    enum op_type : int {
-      ADD = 0x0,
-      SUB = 0x1,
-      MUL = 0x2,
-      DIV = 0x3,
-      SET = 0x4
-    };
-
     struct op_payload {
-      op_type type_;
-      int oprnd_;
+      app::consensus::op_type type_;
+      std::string path_;     // file path
+      std::string content_;  // file content
     };
 
     static ptr<buffer> enc_log(const op_payload& payload) {
-      // Encode from {operator, operand} to Raft log.
+      // Encode from {type, path, content} to Raft log.
       ptr<buffer> ret = buffer::alloc(sizeof(op_payload));
       buffer_serializer bs(ret);
 
-      // WARNING: We don't consider endian-safety in this example.
-      bs.put_raw(&payload, sizeof(op_payload));
+      bs.put_i32((int)payload.type_);
+      bs.put_str(payload.path_);
+      bs.put_str(payload.content_);
 
       return ret;
     }
 
-    static void dec_log(buffer& log, op_payload& payload_out) {
-      // Decode from Raft log to {operator, operand} pair.
-      assert(log.size() == sizeof(op_payload));
-
-      buffer_serializer bs(log);
-      memcpy(&payload_out, bs.get_raw(log.size()), sizeof(op_payload));
+    static void dec_log(buffer& data, op_payload& payload_out) {
+      buffer_serializer bs(data);
+      payload_out.type_ = (app::consensus::op_type)bs.get_i32();
+      payload_out.path_ = bs.get_str();
+      payload_out.content_ = bs.get_str();
     }
 
     ptr<buffer> pre_commit(const ulong log_idx, buffer& data) {
@@ -183,16 +178,25 @@ namespace app::consensus {
       op_payload payload;
       dec_log(data, payload);
 
-      int64_t prev_value = cur_value_;
+      path_t prev_value = cur_value_;
+
       switch (payload.type_) {
-        case ADD: prev_value += payload.oprnd_; break;
-        case SUB: prev_value -= payload.oprnd_; break;
-        case MUL: prev_value *= payload.oprnd_; break;
-        case DIV: prev_value /= payload.oprnd_; break;
+        case app::consensus::op_type::CREATE: {
+          // create file
+        } break;
+        case app::consensus::op_type::WRITE: {
+          // append contents to file
+        } break;
+        case app::consensus::op_type::DELETE: {
+          // remove file
+        } break;
         default:
-        case SET: prev_value = payload.oprnd_; break;
+          cout << red << "consensus_state_machine: Unknown operation type !" << reset << endl;
       }
-      cur_value_ = prev_value;
+
+      cur_value_ = std::make_shared<std::string>(payload.path_);
+
+      // prev_value should be cleaned up automatically by shared_ptr
 
       last_committed_idx_ = log_idx;
 
@@ -238,7 +242,7 @@ namespace app::consensus {
         // Object ID > 0: second object, put actual value.
         data_out = buffer::alloc(sizeof(ulong));
         buffer_serializer bs(data_out);
-        bs.put_u64(ctx->value_);
+        bs.put_str(ctx->value_);
         is_last_obj = true;
       }
       return 0;
@@ -254,7 +258,7 @@ namespace app::consensus {
       } else {
         // Object ID > 0: actual snapshot value.
         buffer_serializer bs(data);
-        int64_t local_value = (int64_t)bs.get_u64();
+        std::string local_value = (std::string)bs.get_str();
 
         std::lock_guard<std::mutex> ll(snapshots_lock_);
         auto entry = snapshots_.find(s.get_last_log_idx());
@@ -271,7 +275,7 @@ namespace app::consensus {
       if (entry == snapshots_.end()) return false;
 
       ptr<snapshot_ctx> ctx = entry->second;
-      cur_value_ = ctx->value_;
+      cur_value_ = std::make_shared<std::string>(ctx->value_);
       return true;
     }
 
@@ -304,21 +308,31 @@ namespace app::consensus {
       }
     }
 
-    int64_t get_current_value() const { return cur_value_; }
+    std::string get_current_value() const {
+      if (cur_value_ != nullptr)
+        return *cur_value_;
+      else
+        return "/";
+    }
 
    private:
     struct snapshot_ctx {
-      snapshot_ctx(ptr<snapshot>& s, int64_t v)
+      snapshot_ctx(ptr<snapshot>& s, std::string v)
           : snapshot_(s), value_(v) {}
       ptr<snapshot> snapshot_;
-      int64_t value_;
+      std::string value_;
     };
 
     void create_snapshot_internal(ptr<snapshot> ss) {
       std::lock_guard<std::mutex> ll(snapshots_lock_);
 
       // Put into snapshot map.
-      ptr<snapshot_ctx> ctx = cs_new<snapshot_ctx>(ss, cur_value_);
+      ptr<snapshot_ctx> ctx;
+      if (cur_value_ != nullptr)
+        ctx = cs_new<snapshot_ctx>(ss, *cur_value_);
+      else
+        ctx = cs_new<snapshot_ctx>(ss, "/");
+
       snapshots_[ss->get_last_log_idx()] = ctx;
 
       // Maintain last 3 snapshots only.
@@ -368,7 +382,7 @@ namespace app::consensus {
     }
 
     // State machine's current value.
-    std::atomic<int64_t> cur_value_;
+    path_t cur_value_;  // represents the path // used to be std::atomic<shared_ptr> but C++20 not yet implemented completely
 
     // Last committed Raft log number.
     std::atomic<uint64_t> last_committed_idx_;
@@ -386,11 +400,11 @@ namespace app::consensus {
 };  // namespace app::consensus
 
 /*
-   ___ _   _   __  __ _____ __  __  ___  ______   __  ____ _____  _  _____ _____   __  __    _    _   _    _    ____ _____ ____
-  |_ _| \ | | |  \/  | ____|  \/  |/ _ \|  _ \ \ / / / ___|_   _|/ \|_   _| ____| |  \/  |  / \  | \ | |  / \  / ___| ____|  _ \
-   | ||  \| | | |\/| |  _| | |\/| | | | | |_) \ V /  \___ \ | | / _ \ | | |  _|   | |\/| | / _ \ |  \| | / _ \| |  _|  _| | |_) |
-   | || |\  | | |  | | |___| |  | | |_| |  _ < | |    ___) || |/ ___ \| | | |___  | |  | |/ ___ \| |\  |/ ___ \ |_| | |___|  _ <
-  |___|_| \_| |_|  |_|_____|_|  |_|\___/|_| \_\|_|   |____/ |_/_/   \_\_| |_____| |_|  |_/_/   \_\_| \_/_/   \_\____|_____|_| \_\
+  ____ _____  _  _____ _____   __  __    _    _   _    _    ____ _____ ____
+ / ___|_   _|/ \|_   _| ____| |  \/  |  / \  | \ | |  / \  / ___| ____|  _ \
+ \___ \ | | / _ \ | | |  _|   | |\/| | / _ \ |  \| | / _ \| |  _|  _| | |_) |
+  ___) || |/ ___ \| | | |___  | |  | |/ ___ \| |\  |/ ___ \ |_| | |___|  _ <
+ |____/ |_/_/   \_\_| |_____| |_|  |_/_/   \_\_| \_/_/   \_\____|_____|_| \_\
 */
 
 namespace nuraft {
@@ -2481,7 +2495,7 @@ namespace app::consensus {
 
   void init_raft(ptr<state_machine> sm_instance, std::string log_path);
   void handle_result(ptr<_TestSuite::TestSuite::Timer> timer, raft_result& result, ptr<std::exception>& err);
-  void append_log(const std::string& cmd, const std::vector<std::string>& tokens);
+  void append_log(op_type, std::string& path, std::string& contents);
   void add_server(const std::vector<std::string>& tokens);
   void print_status();
   void server_list();

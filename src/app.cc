@@ -268,7 +268,7 @@ namespace rpc {
       const string n = className + "::" + __func__;
       std::cout << grey << utility::getClockTime() << reset << yellow << n << reset << std::endl;
     }
-    std::pair<grpc::Status, std::string> res = app::server::read(request->client_id(), request->file_path());\
+    std::pair<grpc::Status, std::string> res = app::server::read(request->client_id(), request->file_path());
     response->set_content(res.second);
     return res.first;
   }
@@ -356,20 +356,18 @@ namespace app {
       cout << grey << "Using config file at: " << config->config << reset << endl;
     }
 
-    {
+    {  // initialize static/object datastructures
       using namespace app::consensus;
 
-      {  // initialize static/object datastructures
-        app::State::stuff.server_id_ = config->consensus.serverId;
-        app::State::stuff.port_ = config->consensus.port;
-        app::State::stuff.addr_ = config->consensus.address;
-        app::State::stuff.endpoint_ = app::State::stuff.addr_ + ":" + std::to_string(app::State::stuff.port_);
+      app::State::stuff.server_id_ = config->consensus.serverId;
+      app::State::stuff.port_ = config->consensus.port;
+      app::State::stuff.addr_ = config->consensus.address;
+      app::State::stuff.endpoint_ = app::State::stuff.addr_ + ":" + std::to_string(app::State::stuff.port_);
 
-        if (config->consensus.asyncSnapshotCreation) {
-          CALL_TYPE = raft_params::async_handler;
-        } else if (config->consensus.asyncHandler) {
-          ASYNC_SNAPSHOT_CREATION = true;
-        }
+      if (config->consensus.asyncSnapshotCreation) {
+        CALL_TYPE = raft_params::async_handler;
+      } else if (config->consensus.asyncHandler) {
+        ASYNC_SNAPSHOT_CREATION = true;
       }
     }
   }
@@ -763,7 +761,7 @@ namespace app::server {
     }
   }
 
-  std::pair<grpc::Status, std::string> read(std::string client_id, std::string file_path){
+  std::pair<grpc::Status, std::string> read(std::string client_id, std::string file_path) {
     // To store return values
     std::pair<grpc::Status, std::string> res = std::make_pair(Status::OK, "");
 
@@ -775,8 +773,6 @@ namespace app::server {
       return res;
     }
     std::shared_ptr<Session> session = info::sessions->at(client_id);
-
-    
 
     /* TODO:: The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
@@ -808,11 +804,11 @@ namespace app::server {
     }
 
     // TODO: The "hello" string below would hold the persistent lock's content
-    res.second = "hello"; // raft.get(file_path)
+    res.second = "hello";  // raft.get(file_path)
     return res;
   }
 
-  grpc::Status write(std::string client_id, std::string file_path, std::string content){
+  grpc::Status write(std::string client_id, std::string file_path, std::string content) {
     if (info::sessions->find(client_id) == info::sessions->end()) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Client with id " << client_id << " does not have a session established with this server." << reset << std::endl;
@@ -854,7 +850,7 @@ namespace app::server {
     return Status::OK;
   }
 
-}  // namespace app::server, namespace server
+}  // namespace app::server
 
 namespace app::client {
   std::string info::session_id;
