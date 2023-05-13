@@ -76,8 +76,8 @@ namespace interactive {
       cout << cyan << "There should be no errors on this close since we had a session." << reset << endl;
     } else if (cmd == "st" || cmd == "stat") {
       // print information about session, handles, locks, state machine files etc.
-      print_status();
-      server_list();
+      // print_status();
+      // server_list();
     } else if (cmd == "ls" || cmd == "list") {
       // list Chubby servers & cluster
     } else if (cmd == "h" || cmd == "help") {

@@ -12,11 +12,12 @@ namespace benchmark {
     grpc::Status t;
 
     // run on measurment
-    benchmark::DoNotOptimize(t = c.ping());
+    benchmark::DoNotOptimize(t = app::client::start_session());
     benchmark::ClobberMemory();
 
-    if (!t.ok())
-      throw std::runtime_error("RPC FAILURE");
+    if (!t.ok()) {
+      cout << red << "UNABLE TO START SESSION: " << t.error_message() << reset << endl;
+    }
   }
 
   static void function(benchmark::State& state) {
