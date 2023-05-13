@@ -200,7 +200,7 @@ namespace utility::parse {
         app.add_options()("flag.election", po::bool_switch(&config->flag.election)->default_value(true), "latency flag: allow for random latency in local machine testing");
 
         app.add_options()("consensus.server-id", po::value<int>(&config->consensus.serverId)->default_value(1), "(check NuRaft docs for details)");
-        app.add_options()("consensus.endpoint", po::value<std::string>(&config->consensus.endpoint)->default_value("localhost:9000"), "<address:port> endpoint of TCP/IP consensus implementation (NuRaft)");
+        app.add_options()("consensus.endpoint", po::value<std::string>(&config->consensus.endpoint)->default_value("127.0.1.1:9000"), "<address:port> endpoint of TCP/IP consensus implementation (NuRaft)");
         app.add_options()("consensus.async-snapshot-creation", po::bool_switch(&config->consensus.asyncSnapshotCreation)->default_value(false), "(check NuRaft docs for details)");
         app.add_options()("consensus.async-handler", po::bool_switch(&config->consensus.asyncHandler)->default_value(false), "(check NuRaft docs for details)");
 
@@ -301,7 +301,7 @@ namespace utility::parse {
         test.add_options()("command,c", po::value<std::string>()->default_value("get"), "command or test function name to run (check implementation to see how it used)");
         test.add_options()("key,k", po::value<std::string>()->default_value("default-key"), "key (optional: test specific)");
         test.add_options()("value,v", po::value<std::string>()->default_value("default-value"), "value (optional: test specific)");
-        test.add_options()("target,t", po::value<std::string>()->default_value("localhost:8000"), "target address to send to (optional: test specific)");
+        test.add_options()("target,t", po::value<std::string>()->default_value("127.0.1.1:8000"), "target address to send to (optional: test specific)");
 
         cmd_options.add(test);   // set options allowed on command line
         file_options.add(test);  // set options allowed in config file

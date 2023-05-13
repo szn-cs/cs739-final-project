@@ -26,13 +26,13 @@ int main(int argc, char** argv) {
     app::initializeStaticInstance(config, config->cluster);
     remove_command_argument(argc, argv, config, variables, args, new_argv);  // remove `mode` from argv
 
-    //   ./target/app --mode test --command set --key k1 --value v1 --target localhost:8002
+    //   ./target/app --mode test --command set --key k1 --value v1 --target 127.0.1.1:8002
     if (!variables.count("command"))
       throw "`command` argument is required";
 
     // if command exists
     std::string command = variables["command"].as<std::string>();  // defaults to `get`
-    std::string target = variables["target"].as<std::string>();    // defaults to `localhost:8000`
+    std::string target = variables["target"].as<std::string>();    // defaults to `127.0.1.1:8000`
     std::string key = variables["key"].as<std::string>();          // defaults to `default_key`
     std::string value = variables["value"].as<std::string>();      // defaults to `default_value`
     std::map<std::string, TestFnPtr_t> testFunctionMap;

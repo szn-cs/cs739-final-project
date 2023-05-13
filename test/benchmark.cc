@@ -22,7 +22,7 @@ namespace benchmark {
   static void function(benchmark::State& state) {
     state.PauseTiming();
     cout << termcolor::grey << utility::getClockTime() << termcolor::reset << endl;
-    std::string address = "localhost:8000";  // can be leader / follower depending on initial setup (not automated)
+    std::string address = "127.0.1.1:8000";  // can be leader / follower depending on initial setup (not automated)
     rpc::Endpoint c{address};
     // initialization
 

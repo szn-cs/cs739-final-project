@@ -18,7 +18,7 @@ namespace app::consensus {
 
   typedef struct server_stuff {
     server_stuff()
-        : server_id_(1), addr_("localhost"), port_(25000), raft_logger_(nullptr), sm_(nullptr), smgr_(nullptr), raft_instance_(nullptr) {}
+        : server_id_(1), addr_("127.0.1.1"), port_(25000), raft_logger_(nullptr), sm_(nullptr), smgr_(nullptr), raft_instance_(nullptr) {}
 
     void reset() {
       raft_logger_.reset();
