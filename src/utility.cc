@@ -317,6 +317,8 @@ namespace utility::parse {
       {
         po::options_description interactive("--mode interactive");
 
+        // interactive.add_options()("cluster.address,a", make_value<std::vector<std::string>>(&config->cluster), "Addresses (incl. ports) of cluster participants <address:port>");
+
         // interactive.add_options()("", po::value<std::string>()->default_value(""), "");
 
         cmd_options.add(interactive);   // set options allowed on command line

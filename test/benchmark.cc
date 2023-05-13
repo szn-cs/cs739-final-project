@@ -10,6 +10,8 @@ namespace benchmark {
   // This test is not fully automated and required manual setup of cluster beforehand.
   void run(rpc::Endpoint& c, const size_t size) {
     grpc::Status t;
+
+    // run on measurment
     benchmark::DoNotOptimize(t = c.ping());
     benchmark::ClobberMemory();
 
@@ -22,6 +24,7 @@ namespace benchmark {
     cout << termcolor::grey << utility::getClockTime() << termcolor::reset << endl;
     std::string address = "localhost:8000";  // can be leader / follower depending on initial setup (not automated)
     rpc::Endpoint c{address};
+    // initialization
 
     state.ResumeTiming();
 

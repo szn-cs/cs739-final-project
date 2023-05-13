@@ -5,7 +5,6 @@ namespace test {
 
   void test_start_session(std::shared_ptr<utility::parse::Config> config, boost::program_options::variables_map& variables) {
     grpc::Status r = app::client::start_session();
-
     if (r.ok()) {
       cout << green << "Test passed for this configuration." << reset << endl;
     } else {
@@ -39,7 +38,6 @@ namespace test {
     }
 
     bool r = app::client::open_lock("./test");
-
     if (r) {
       cout << "Lock created" << endl;
     } else {
@@ -48,7 +46,6 @@ namespace test {
     }
 
     r = app::client::open_lock("./test");
-
     if (!r) {
       cout << "Second attempt correctly refused." << endl;
     } else {
@@ -63,7 +60,6 @@ namespace test {
     }
 
     bool r = app::client::open_lock("./test");
-
     if (r) {
       cout << "Lock created" << endl;
     } else {
@@ -74,7 +70,6 @@ namespace test {
     /* NOTE: Can only happen when holding the lock. */
     // r = app::client::acquire_lock("./test");
     r = app::client::delete_lock("./test");
-
     if (r) {
       cout << "Correctly deleted lock" << endl;
     } else {
@@ -83,7 +78,6 @@ namespace test {
     }
 
     r = app::client::open_lock("./test");
-
     if (r) {
       cout << "Lock created" << endl;
     } else {
@@ -98,7 +92,6 @@ namespace test {
     }
 
     bool r = app::client::open_lock("./test");
-
     if (r) {
       cout << "Lock created" << endl;
     } else {
@@ -162,7 +155,6 @@ namespace test {
 
     //Client 1 opens lock
     bool r = app::client::open_lock("./test");
-
     if (r) {
       cout << "Lock created" << endl;
     } else {
@@ -172,7 +164,6 @@ namespace test {
 
     // Client 2 opens lock
     grpc::Status r4 = app::client::info::master->endpoint.open_lock("sess2", "./test");
-
     if (!r4.ok()) {
       cout << "Second attempt correctly refused." << endl;
     } else {

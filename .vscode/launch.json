@@ -53,7 +53,33 @@
 				}
 			]
 			// "preLaunchTask": "C/C++: g++-10 build"
+		}, 
+        {
+			"name": "TEST GDB C++ with specific arguments 2",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/target/test",
+			"args": ["-g","--config","3_node_cluster.ini", "-m", "test", "-c", "test_rw"],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"setupCommands": [
+				{
+					"description": "Enable pretty-printing for gdb",
+					"text": "-enable-pretty-printing",
+					"ignoreFailures": true
+				},
+				{
+					"description": "Set Disassembly Flavor to Intel",
+					"text": "-gdb-set disassembly-flavor intel",
+					"ignoreFailures": true
+				}
+			]
+			// "preLaunchTask": "C/C++: g++-10 build"
 		}
+
 	]
 
 	]

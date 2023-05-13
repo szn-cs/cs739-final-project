@@ -1,34 +1,5 @@
 #include "./common.h"
 
-void example_usage_of_consensus() {
-  {  // EXAMPLE: add sever dynamically to NuRaft
-    using namespace app::consensus;
-
-    // const std::vector<std::string>& tokens = {"2", "localhost:9002"};
-    // add_server(tokens);
-  }
-
-  {  // EXAMPLE: commit a command value to consensus log every 2 seconds and print cluster state
-    using namespace app::consensus;
-
-    while (true) {
-      if (app::State::config->flag.debug) {
-        print_status();
-        server_list();
-      }
-
-      cout << grey << "⏳ wait 2s" << reset << endl;
-      sleep(2);
-
-      std::string path = "./dir/file";
-      std::string contents = "contents inside file";
-      cout << on_bright_cyan << "🧬 Trying to replicate command: "
-           << "WRITE " << path << " " << reset << endl;
-      append_log(op_type::WRITE, path, contents);
-    }
-  }
-}
-
 /**
  * initialize configurations, run RPC servers, and start consensus coordination
  */
@@ -51,37 +22,20 @@ int main(int argc, char* argv[]) {
   auto m_app = [&argc, &argv, &variables, &config]() {
     cout << grey << "mode = APP" << reset << endl;
 
-    // handle directory:
-    fs::create_directories(fs::absolute(config->directory));  // create directory if doesn't exist
+    app::initializeStaticInstance(config, config->cluster);  // Initialize Cluster data & Node instances
 
-    // Initialize Cluster data & Node instances
-    app::initializeStaticInstance(config, config->cluster);
+    app::init_consensus();  // run NuRaft stuff
 
-    // run NuRaft stuff
-    app::init_consensus();
-    if (app::State::config->flag.debug) {
-      app::consensus::print_status();
-      app::consensus::server_list();
-    }
+    app::server::init_server_info();  // Initialize the server data structures
 
-    // Initialize the server data structures
-    app::server::init_server_info();
-
-    // RPC services on separate threads
+    // start a lock service server - expose that to the client and accept requests - RPC services on separate threads
     utility::parse::Address a = config->getAddress<app::Service::NODE>();
     std::thread t(utility::server::run_gRPC_server<rpc::RPC>, a);
     std::cout << blue << "⚡ lock service: " << a.toString() << reset << std::endl;
 
-    // call app functionality
-    // TODO:
-    // start a lock service server - expose that to the client and accept requests
-
-    // EXAMPLE of NuRaft consensus
-    // example_usage_of_consensus();
-
-    t.join();
-
     {  // terminate app
+      t.join();
+
       // gracefully terminate NuRaft & ASIO used
       app::State::stuff.launcher_.shutdown(5);
       app::State::stuff.reset();

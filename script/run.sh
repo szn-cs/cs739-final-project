@@ -8,22 +8,26 @@ usage_example1() {
   ./target/test --help
   # terminals for cluster nodes:
   {
-    ./target/app -g --port 8001 --consensus.endpoint localhost:9000 --consensus.server-id 9000 --config ./3_node_cluster.ini
+    ./target/app -g --port 8001 --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./3_node_cluster.ini
     # equivalent to:
-    ./target/app -g --consensus.endpoint localhost:9000 --consensus.server-id 9000 --cluster.address localhost:9001 --cluster.address localhost:9002
+    ./target/app -g --port 8001 --consensus.endpoint localhost:9001 --consensus.server-id 9001 --cluster.address localhost:9001 --cluster.address localhost:9002
   }
   {
-    ./target/app -g --port 8002 --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./3_node_cluster.ini
+    ./target/app -g --port 8002 --consensus.endpoint localhost:9002 --consensus.server-id 9002 
   }
   {
-    ./target/app -g --port 8003 --consensus.endpoint localhost:9002 --consensus.server-id 9002 --config ./3_node_cluster.ini
+    ./target/app -g --port 8003 --consensus.endpoint localhost:9003 --consensus.server-id 9003 
   }
 
   # terminal for user/client side
   {
-    ./target/test -g --mode interactive
+    ./target/test -g --mode interactive --config 3_chubby.ini
     # or
-    ./target/test -g --mode test --command test_maintain_session
+    ./target/test -g --mode interactive --cluster.address 8000
+    # or
+    ./target/test -g --mode test --command test_maintain_session --config 3_chubby.ini
+    # or 
+    ./target/test -g -m test -c test_start_session -a 127.0.1.1:8001 -a 127.0.1.1:8002 -a 127.0.1.1:8003
     # or
     ./target/test -g --mode benchmark
   }

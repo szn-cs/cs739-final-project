@@ -5,8 +5,12 @@ set(BINARY_NAME app)
 set(SERVER_SRC 
   ${SOURCE_FOLDER}/entrypoint.cc
   ${SOURCE_FOLDER}/app.cc
+  ${SOURCE_FOLDER}/client.cc
   ${SOURCE_FOLDER}/utility.cc
-  ${SOURCE_FOLDER}/consensus.cc
+  ${SOURCE_FOLDER}/consensus/consensus.cc
+  ${SOURCE_FOLDER}/consensus/log_store.cc
+  ${SOURCE_FOLDER}/consensus/debugger.cc
+  ${SOURCE_FOLDER}/rpc.cc
 )
 
 include(CheckFunctionExists)

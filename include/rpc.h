@@ -18,7 +18,6 @@ namespace rpc {
     grpc::Status release_lock(ServerContext*, const interface::ReleaseLockRequest*, interface::Empty*) override;
     grpc::Status read(ServerContext*, const interface::ReadRequest*, interface::ReadResponse*) override;
     grpc::Status write(ServerContext*, const interface::WriteRequest*, interface::WriteResponse*) override;
-
   };
 
   /**
@@ -35,10 +34,10 @@ namespace rpc {
     grpc::Status ping();
     grpc::Status init_session(std::string);
     grpc::Status close_session(std::string);
-    std::pair<grpc::Status, int64_t> keep_alive(std::string, chrono::system_clock::time_point);                                     // Used for communicating with a known master
+    std::pair<grpc::Status, int64_t> keep_alive(std::string, chrono::system_clock::time_point);   // Used for communicating with a known master
     std::pair<grpc::Status, int64_t> keep_alive(std::string, std::map<std::string, LockStatus>);  // Used when in jeopardy
-    grpc::Status open_lock(std::string, std::string);                                                                               // Used to create a new file (lock)
-    grpc::Status delete_lock(std::string, std::string);                                                                             // Used to delete a file (lock)
+    grpc::Status open_lock(std::string, std::string);                                             // Used to create a new file (lock)
+    grpc::Status delete_lock(std::string, std::string);                                           // Used to delete a file (lock)
     grpc::Status acquire_lock(std::string, std::string, LockStatus);
     grpc::Status release_lock(std::string, std::string);
     std::pair<grpc::Status, std::string> read(std::string, std::string);

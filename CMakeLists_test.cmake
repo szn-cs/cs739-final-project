@@ -8,8 +8,12 @@ set(SRC_FILES
   ${TEST_FOLDER}/benchmark.cc
   ${TEST_FOLDER}/interactive.cc
   ${SOURCE_FOLDER}/app.cc
+  ${SOURCE_FOLDER}/client.cc
   ${SOURCE_FOLDER}/utility.cc
-  ${SOURCE_FOLDER}/consensus.cc
+  ${SOURCE_FOLDER}/consensus/consensus.cc
+  ${SOURCE_FOLDER}/consensus/log_store.cc
+  ${SOURCE_FOLDER}/consensus/debugger.cc
+  ${SOURCE_FOLDER}/rpc.cc
 )
 
 include(CheckFunctionExists)
