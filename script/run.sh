@@ -137,26 +137,26 @@ terminate_process() {
 
 #  (source ./script/run.sh; terminate_process; bench_nodes)
 bench_nodes() {
-  NAME=acquire_lock
+  NAME=write
   NUMBER=10
   CONFIG=${NUMBER}_node_cluster.ini
   CONFIG_Chubby=${NUMBER}_chubby.ini
-  FILE=${NUMBER}_node_${NAME}_debug.csv
-  # FILE=${NUMBER}_node_${NAME}_optimized.csv
+  # FILE=${NUMBER}_node_${NAME}_debug.csv
+  FILE=${NUMBER}_node_${NAME}_optimized.csv
 
   for i in {1..$NUMBER}; do
     ones=$(($i % 10))
     tens=$((${i} / 10 % 10))
     port_suffix="${tens}${ones}"
 
-  ./target/app  -g --port 80${port_suffix} --consensus.endpoint 127.0.1.1:90${port_suffix} --consensus.server-id 90${port_suffix} --config $CONFIG &
+    ./target/app --port 80${port_suffix} --consensus.endpoint 127.0.1.1:90${port_suffix} --consensus.server-id 90${port_suffix} --config $CONFIG &
   done
 
   #### separate stage
 
   sleep 2
 
-  ./target/test -g --config ${CONFIG_Chubby} --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
+  ./target/test --config ${CONFIG_Chubby} --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
 
   sleep 4
   terminate_process

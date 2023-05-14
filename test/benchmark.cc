@@ -95,7 +95,64 @@ namespace benchmark {
 
     }
   }
-  BENCHMARK(benchmark::acquire)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
+  // BENCHMARK(benchmark::acquire)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
+
+
+}  // namespace benchmark
+
+
+
+namespace benchmark {
+
+  void run_write(benchmark::State& state) {
+    grpc::Status status;
+    benchmark::DoNotOptimize(
+      status = app::client::write("./test", "Hello world")
+    );
+    benchmark::ClobberMemory();
+
+    if (status.ok()) {
+      cout << "Correctly wrote to file" << endl;
+    } else {
+      cout << red << "Was not able to write to file" << reset << endl;
+      return;
+    }
+  }
+
+  static void write(benchmark::State& state) {
+    for (auto _ : state) {
+      grpc::Status t;
+
+      state.PauseTiming();
+
+        grpc::Status r1 = app::client::start_session();
+        if (!r1.ok()) {
+          cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+        }
+
+        bool r = app::client::open_lock("./test");
+        if (r) {
+          cout << "Lock created" << endl;
+        } else {
+          cout << red << "Failed to open lock, ending test for server" << reset << endl;
+          return;
+        }
+
+        grpc::Status status = app::client::acquire_lock("./test", LockStatus::EXCLUSIVE);
+        if (status.ok()) {
+          cout << "Correctly acquired lock" << endl;
+        } else {
+          cout << red << "unable to delete lock" << reset << endl;
+          return;
+        }
+
+      state.ResumeTiming();
+
+      run_write(state);
+
+    }
+  }
+  BENCHMARK(benchmark::write)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
 
 
 }  // namespace benchmark
