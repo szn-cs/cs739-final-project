@@ -31,6 +31,19 @@ usage_example1() {
     # or
     ./target/test -g --mode benchmark
   }
+
+  {
+      ./target/app --port 8001 --consensus.endpoint localhost:9001 --consensus.server-id 9001 --config ./5_node_cluster.ini &
+      ./target/app --port 8002 --consensus.endpoint localhost:9002 --consensus.server-id 9002  --config ./5_node_cluster.ini &
+      ./target/app --port 8003 --consensus.endpoint localhost:9003 --consensus.server-id 9003  --config ./5_node_cluster.ini &
+      ./target/app --port 8004 --consensus.endpoint localhost:9004 --consensus.server-id 9004 --config ./5_node_cluster.ini & 
+      ./target/app --port 8005 --consensus.endpoint localhost:9005 --consensus.server-id 9005  --config ./5_node_cluster.ini &
+
+      kill $(jobs -p)
+  }
+
+
+
 }
 
 usage_example2() {
@@ -114,4 +127,35 @@ terminate_process() {
   # cleanup
   (kill $(ps aux | grep '[./]target/app' | awk '{print $2}') >/dev/null 2>&1)
   kill $(jobs -p) >/dev/null 2>&1
+}
+
+#  (source ./script/run.sh; terminate_process; bench_nodes)
+bench_nodes() {
+  NAME=acquire_lock
+  NUMBER=1
+  CONFIG=${NUMBER}_node_cluster.ini
+  CONFIG_Chubby=${NUMBER}_chubby.ini
+  # FILE=${NUMBER}_node_${NAME}_debug.csv
+  FILE=${NUMBER}_node_${NAME}_optimized.csv
+
+  for i in {1..$NUMBER}; do
+    ones=$(($i % 10))
+    tens=$((${i} / 10 % 10))
+    port_suffix="${tens}${ones}"
+
+
+    ./target/app  --port 80${port_suffix} --consensus.endpoint 127.0.1.1:90${port_suffix} --consensus.server-id 90${port_suffix} --config $CONFIG &
+  done
+
+  #### separate stage
+
+  sleep 2
+
+  ./target/test --config ${CONFIG_Chubby} --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
+
+  sleep 4
+  terminate_process
+  rm -r ./tmp/
+
+  echo "✅ Bench END";
 }

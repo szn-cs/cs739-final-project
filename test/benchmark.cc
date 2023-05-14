@@ -8,17 +8,12 @@
 */
 // This test is not fully automated and required manual setup of cluster beforehand.
 namespace benchmark {
+  /*
   void run_session(benchmark::State& state) {
-    grpc::Status t;
 
     // run on measurment
-    benchmark::DoNotOptimize(t = app::client::start_session());
+    benchmark::DoNotOptimize(app::client::close_session());
     benchmark::ClobberMemory();
-
-    if (!t.ok()) {
-      cout << red << "UNABLE TO START SESSION: " << t.error_message() << reset << endl;
-    }
-
   }
 
   static void session(benchmark::State& state) {
@@ -29,12 +24,16 @@ namespace benchmark {
 
     // Perform setup here
     for (auto _ : state) {
+      grpc::Status t;
+      state.PauseTiming();
+      t = app::client::start_session();
+      if (!t.ok()) {
+        cout << red << "UNABLE TO START SESSION: " << t.error_message() << reset << endl;
+      }
+      state.ResumeTiming();
+
       // This code gets timed
       run_session(state);
-
-      state.PauseTiming();
-      app::client::close_session();
-      state.ResumeTiming();
     }
   }
 
@@ -42,4 +41,53 @@ namespace benchmark {
   // BENCHMARK(benchmark_function)->RangeMultiplier(2)->Range(1 << 10, 1 << 20);
   // BENCHMARK(benchmark_function)->Arg(1);  // ->Arg(200000)->Arg(400000);
   BENCHMARK(benchmark::session)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
+  */
+}
+
+namespace benchmark {
+
+  void run_acquire(benchmark::State& state) {
+            grpc::Status status;
+
+
+    benchmark::DoNotOptimize(
+      status = app::client::acquire_lock("./test", LockStatus::EXCLUSIVE)
+    );
+    benchmark::ClobberMemory();
+
+    if (status.ok()) {
+      cout << "Correctly acquired lock" << endl;
+    } else {
+      cout << red << "unable to delete lock" << reset << endl;
+      return;
+    }
+  }
+
+  static void acquire(benchmark::State& state) {
+    for (auto _ : state) {
+      grpc::Status t;
+
+      state.PauseTiming();
+        grpc::Status r1 = app::client::start_session();
+        if (!r1.ok()) {
+          cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+        }
+
+        bool r = app::client::open_lock("./test");
+        if (r) {
+          cout << "Lock created" << endl;
+        } else {
+          cout << red << "Failed to open lock, ending test for server" << reset << endl;
+          return;
+        }
+      state.ResumeTiming();
+
+      run_acquire(state);
+
+    }
+  }
+  BENCHMARK(benchmark::acquire)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
+
+
 }  // namespace benchmark
+

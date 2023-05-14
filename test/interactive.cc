@@ -17,6 +17,7 @@ namespace interactive {
       if (!r1.ok()) {
         cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
       }
+      
     } else if (cmd == "open_lock") {
       bool r = app::client::open_lock(tokens[1]);
       if (r) {
@@ -24,6 +25,7 @@ namespace interactive {
       } else {
         cout << red << "Failed to open lock, ending test for server" << reset << endl;
       }
+
     } else if (cmd == "acquire_lock") {
       grpc::Status status;
 
@@ -56,6 +58,7 @@ namespace interactive {
       } else {
         cout << red << "Was not able to write even though exclusive lock." << reset << endl;
       }
+
     } else if (cmd == "read") {
       std::pair<grpc::Status, std::string> res = app::client::read(tokens[1]);
       if (res.first.ok()) {
@@ -71,6 +74,8 @@ namespace interactive {
       } else {
         cout << red << "Was not able to release lock" << reset << endl;
       }
+
+    
     } else if (cmd == "close_session") {
       app::client::close_session();
       cout << cyan << "There should be no errors on this close since we had a session." << reset << endl;
