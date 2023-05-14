@@ -1,0 +1,11 @@
+2023-05-13T21:19:26-05:00
+Running ./target/test
+Run on (8 X 4008 MHz CPU s)
+CPU Caches:
+  L1 Data 32 KiB (x4)
+  L1 Instruction 32 KiB (x4)
+  L2 Unified 256 KiB (x4)
+  L3 Unified 8192 KiB (x1)
+Load Average: 0.28, 0.62, 0.60
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
+"benchmark::entire_process/iterations:1",1,8.773e+06,4.19509e+06,ns,,,,,

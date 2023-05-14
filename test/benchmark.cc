@@ -161,7 +161,7 @@ namespace benchmark {
 
     }
   }
-  BENCHMARK(benchmark::read)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
+  // BENCHMARK(benchmark::read)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
 
 
 }  // namespace benchmark
@@ -218,6 +218,69 @@ namespace benchmark {
     }
   }
   // BENCHMARK(benchmark::write)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
+
+
+}  // namespace benchmark
+
+
+
+namespace benchmark {
+
+  void run_entire_process(benchmark::State& state) {
+        grpc::Status r1 = app::client::start_session();
+        if (!r1.ok()) {
+          cout << red << "UNABLE TO START SESSION: " << r1.error_message() << reset << endl;
+        }
+
+        bool r = app::client::open_lock("./test");
+        if (r) {
+          cout << "Lock created" << endl;
+        } else {
+          cout << red << "Failed to open lock, ending test for server" << reset << endl;
+          return;
+        }
+
+        grpc::Status status = app::client::acquire_lock("./test", LockStatus::EXCLUSIVE);
+        if (status.ok()) {
+          cout << "Correctly acquired lock" << endl;
+        } else {
+          cout << red << "unable to delete lock" << reset << endl;
+          return;
+        }
+
+        status = app::client::write("./test", "hello");
+        if (status.ok()) {
+          cout << green << "Correctly wrote 'hello' to the server" << reset << endl;
+        } else {
+          cout << red << "Was not able to write even though exclusive lock." << reset << endl;
+          return;
+        }
+
+        std::pair<grpc::Status, std::string> res = app::client::read("./test");
+        if (res.first.ok()) {
+          cout << green << "Correctly read: '" << res.second << "' from server." << reset << endl;
+        } else {
+          cout << red << "Was not able to read from server." << reset << endl;
+          return;
+        }
+
+        app::client::close_session();
+
+        cout << cyan << "There should be no errors on this close since we had a session." << reset << endl;
+  }
+
+  static void entire_process(benchmark::State& state) {
+    for (auto _ : state) {
+      grpc::Status t;
+
+      state.PauseTiming();
+      state.ResumeTiming();
+
+      run_entire_process(state);
+
+    }
+  }
+  BENCHMARK(benchmark::entire_process)->Iterations(1); // ->Iterations(pow(10, 4));  // ->Arg(200000)->Arg(400000)
 
 
 }  // namespace benchmark
