@@ -18,6 +18,12 @@ usage_example1() {
   {
     ./target/app -g --port 8003 --consensus.endpoint localhost:9003 --consensus.server-id 9003 
   }
+    {
+    ./target/app -g --port 8004 --consensus.endpoint localhost:9003 --consensus.server-id 9003 --config ./3_node_cluster.ini
+  }
+    {
+    ./target/app -g --port 8005 --consensus.endpoint localhost:9004 --consensus.server-id 9004 --config ./3_node_cluster.ini
+  }
 
   # terminal for user/client side
   {

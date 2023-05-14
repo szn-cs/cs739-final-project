@@ -381,7 +381,7 @@ namespace app::server {
 
     /* TODO:: The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
-    if (is_exists(file_path)) {
+    if (!is_exists(file_path)) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
       }
@@ -476,7 +476,7 @@ namespace app::server {
     /* The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
     // IMPORTANT: The following code just checks if lock exists IN MEMORY (not needed if we check persistent)
-    if (is_exists(file_path)) {
+    if (!is_exists(file_path)) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
       }
@@ -591,7 +591,7 @@ namespace app::server {
     /*  The below stuff once we get raft configged correctly */
     // Check if lock exists in persistent store
     // IMPORTANT: The following code just checks if lock exists IN MEMORY (not needed if we check persistent)
-    if (is_exists(file_path)) {
+    if (!is_exists(file_path)) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Lock with name " << file_path << " already exists." << reset << std::endl;
       }
