@@ -137,8 +137,8 @@ terminate_process() {
 
 #  (source ./script/run.sh; terminate_process; bench_nodes)
 bench_nodes() {
-  NAME=write
-  NUMBER=10
+  NAME=read
+  NUMBER=1
   CONFIG=${NUMBER}_node_cluster.ini
   CONFIG_Chubby=${NUMBER}_chubby.ini
   # FILE=${NUMBER}_node_${NAME}_debug.csv
@@ -156,7 +156,7 @@ bench_nodes() {
 
   sleep 2
 
-  ./target/test --config ${CONFIG_Chubby} --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
+  ./target/test  --config ${CONFIG_Chubby} --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
 
   sleep 4
   terminate_process
