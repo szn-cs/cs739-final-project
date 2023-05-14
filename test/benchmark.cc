@@ -58,7 +58,7 @@ namespace benchmark {
     if (status.ok()) {
       cout << "Correctly acquired lock" << endl;
     } else {
-      cout << red << "unable to delete lock" << reset << endl;
+      cout << red << "unable to acquire lock" << reset << endl;
       return;
     }
   }
@@ -80,6 +80,15 @@ namespace benchmark {
           cout << red << "Failed to open lock, ending test for server" << reset << endl;
           return;
         }
+
+        r = app::client::delete_lock("./test");
+        if (!r) {
+          cout << green << "Correctly failed lock, this was expected to fail." << endl;
+        } else {
+          cout << red << "Destroyed lock even though we don't own it" << reset << endl;
+          return;
+        }
+
       state.ResumeTiming();
 
       run_acquire(state);
