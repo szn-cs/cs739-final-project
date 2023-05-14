@@ -40,7 +40,9 @@ namespace rpc {
 
     // if ((*(app::State::master)).compare(app::State::config->getAddress<app::Service::NODE>().toString()) == 0) {
     if (app::State::stuff.server_id_ == app::State::stuff.raft_instance_->get_leader()) {
-      cout << yellow << "We are leader" << reset << endl;
+      if (app::State::config->flag.debug) {
+        cout << yellow << "We are leader" << reset << endl;
+      }
       return app::server::create_session(request->client_id());
     }
     return Status::CANCELLED;

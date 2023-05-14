@@ -103,10 +103,10 @@ test_consistency_no_failure() {
 test_benchmark() {
   # setup different cluster sizes
 
-  FILE=15_node.csv
+  FILE=3_node.csv
   # FOLDER=benchmark_set_leader
   # ./target/test --mode benchmark --benchmark_out=./results/${FOLDER}/${FILE} --benchmark_out_format=csv
-  ./target/test --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
+  ./target/test -g --config 3_chubby.ini --mode benchmark --benchmark_out=./results/${FILE} --benchmark_out_format=csv
 }
 
 #  (source ./script/run.sh && terminate_process)

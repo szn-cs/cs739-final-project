@@ -134,6 +134,9 @@ namespace app::server {
   }
 
   grpc::Status close_session(std::string client_id) {
+    if(info::sessions == nullptr) 
+      throw "❌ info::sessions is null !";
+
     if (info::sessions->find(client_id) == info::sessions->end()) {
       if (State::config->flag.debug) {
         std::cout << yellow << "Client with id " << client_id << " does not have a session to end." << reset << std::endl;
@@ -197,6 +200,8 @@ namespace app::server {
   }
 
   void end_session(std::shared_ptr<Session> session) {
+    if(session == nullptr) 
+      throw "❌ session param is null !";
     session->terminated = true;
 
     // Release all locks

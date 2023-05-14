@@ -75,6 +75,7 @@ int main(int argc, char** argv) {
     using namespace benchmark;
 
     cout << termcolor::grey << "mode = BENCHMARK" << termcolor::reset << endl;
+    cout << grey << "NOTE: benchmark mode should be run with release compilation option (non-debug)" << reset << endl; 
 
     // additional parsing
     auto f = utility::parse::parse_options<utility::parse::Parse::TEST>(argc, argv, config, variables);  // parse options from different sources
