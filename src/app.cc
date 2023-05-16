@@ -211,6 +211,8 @@ namespace app::server {
         if (State::config->flag.debug) {
           std::cout << grey << "Error releasing lock " << it->first << " by client " << session->client_id << "." << reset << std::endl;
         }
+        return;
+        continue;
       }
       it = session->locks->cbegin();
     }

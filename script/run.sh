@@ -27,7 +27,7 @@ usage_example1() {
 
   # terminal for user/client side
   {
-    ./target/test -g --mode interactive --config 3_chubby.ini
+    ./target/test -g --mode interactive --config 5_chubby.ini
     # or
     ./target/test -g --mode interactive --cluster.address 8000
     # or
@@ -138,7 +138,7 @@ terminate_process() {
 #  (source ./script/run.sh; terminate_process; bench_nodes)
 bench_nodes() {
   NAME=entire_process
-  NUMBER=10
+  NUMBER=5
   CONFIG=${NUMBER}_node_cluster.ini
   CONFIG_Chubby=${NUMBER}_chubby.ini
   FILE=${NUMBER}_node_${NAME}_debug.csv
